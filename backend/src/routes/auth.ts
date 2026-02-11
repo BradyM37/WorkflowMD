@@ -622,6 +622,18 @@ authRouter.get('/oauth/callback', asyncHandler(async (req: any, res: any) => {
       const jwtToken = generateJWT(user);
       const refreshToken = generateRefreshToken(user);
 
+      // Create session record in database
+      const crypto = await import('crypto');
+      const sessionId = (await import('uuid')).v4();
+      const tokenHash = crypto.createHash('sha256').update(jwtToken).digest('hex');
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      
+      await pool.query(
+        `INSERT INTO sessions (id, user_id, token_hash, ip_address, user_agent, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [sessionId, userId, tokenHash, req.ip || null, req.get('user-agent') || null, expiresAt]
+      );
+
       // Set session cookies
       const cookieOptions = {
         httpOnly: true,
