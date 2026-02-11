@@ -157,7 +157,11 @@ const Dashboard: React.FC = () => {
   } = useQuery<Workflow[]>(
     'workflows',
     () => {
-      return api.get('/api/workflows').then(res => res.data.data || res.data);
+      return api.get('/api/workflows').then(res => {
+        // API returns { success: true, data: { workflows: [...], count: N } }
+        const data = res.data.data || res.data;
+        return data.workflows || data;
+      });
     },
     {
       retry: 1,
