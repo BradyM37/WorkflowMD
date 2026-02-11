@@ -16,11 +16,14 @@ interface RegisterData {
   companyName?: string;
 }
 
+export type PlanType = 'free' | 'pro' | 'agency';
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  subscription: 'free' | 'pro';
+  subscription: PlanType;
+  planType: PlanType;
   locationId: string | null;
   ghlConnected: boolean;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
@@ -45,9 +48,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [subscription, setSubscription] = useState<'free' | 'pro'>('free');
+  const [subscription, setSubscription] = useState<PlanType>('free');
   const [locationId, setLocationId] = useState<string | null>(null);
   const [ghlConnected, setGhlConnected] = useState(false);
+
+  // planType is an alias for subscription for cleaner API
+  const planType = subscription;
 
   const checkAuth = async () => {
     setIsLoading(true);
@@ -57,7 +63,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.data.success && response.data.data.authenticated) {
         setUser(response.data.data.user);
         setIsAuthenticated(true);
-        setSubscription(response.data.data.subscription || 'free');
+        // Support both planType and subscription from backend
+        const plan = response.data.data.planType || response.data.data.subscription || 'free';
+        setSubscription(plan as PlanType);
         setLocationId(response.data.data.locationId || null);
         setGhlConnected(response.data.data.ghlConnected || false);
       } else {
@@ -89,7 +97,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setUser(response.data.data.user);
       setIsAuthenticated(true);
-      setSubscription(response.data.data.subscription || 'free');
+      const plan = response.data.data.planType || response.data.data.subscription || 'free';
+      setSubscription(plan as PlanType);
       setLocationId(response.data.data.locationId || null);
       setGhlConnected(response.data.data.ghlConnected || false);
     } else {
@@ -160,6 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated,
         isLoading,
         subscription,
+        planType,
         locationId,
         ghlConnected,
         login,

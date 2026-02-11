@@ -5,6 +5,7 @@
 
 import { Router } from 'express';
 import { requireAuth, requireGHLConnection } from '../middleware/auth';
+import { attachPlanInfo, requirePro } from '../middleware/plan-gate';
 import { ApiResponse } from '../lib/response';
 import { asyncHandler } from '../middleware/error-handler';
 import { logger } from '../lib/logger';
@@ -16,10 +17,13 @@ const advancedMetricsRouter = Router();
  * GET /api/metrics/hourly
  * Get response times broken down by hour of day and day of week
  */
+// Pro feature: Hourly heatmap analytics
 advancedMetricsRouter.get(
   '/hourly',
   requireAuth,
   requireGHLConnection,
+  attachPlanInfo,
+  requirePro,
   asyncHandler(async (req: any, res: any) => {
     const locationId = req.locationId;
     const days = parseInt(req.query.days as string) || 30;
@@ -117,10 +121,13 @@ advancedMetricsRouter.get(
  * GET /api/metrics/comparison
  * Compare current period vs previous period
  */
+// Pro feature: Period comparison analytics
 advancedMetricsRouter.get(
   '/comparison',
   requireAuth,
   requireGHLConnection,
+  attachPlanInfo,
+  requirePro,
   asyncHandler(async (req: any, res: any) => {
     const locationId = req.locationId;
     const days = parseInt(req.query.days as string) || 7;
@@ -219,10 +226,13 @@ advancedMetricsRouter.get(
  * GET /api/metrics/export
  * Export conversation data as CSV
  */
+// Pro feature: Export conversation data
 advancedMetricsRouter.get(
   '/export',
   requireAuth,
   requireGHLConnection,
+  attachPlanInfo,
+  requirePro,
   asyncHandler(async (req: any, res: any) => {
     const locationId = req.locationId;
     const days = parseInt(req.query.days as string) || 30;
@@ -313,10 +323,13 @@ advancedMetricsRouter.get(
  * GET /api/metrics/sla
  * Get SLA compliance metrics
  */
+// Pro feature: SLA compliance metrics
 advancedMetricsRouter.get(
   '/sla',
   requireAuth,
   requireGHLConnection,
+  attachPlanInfo,
+  requirePro,
   asyncHandler(async (req: any, res: any) => {
     const locationId = req.locationId;
     const days = parseInt(req.query.days as string) || 7;

@@ -472,31 +472,211 @@ webhookRouter.post('/events', async (req, res) => {
   try {
     const data = req.body.data || req.body;
 
-    // Process GHL subscription/payment events
+    // Process GHL Marketplace subscription/payment events
     switch (eventType) {
-      case 'SaasPlanCreate':
-      case 'ORDER_COMPLETED': {
-        // User subscribed to Pro plan via GHL
-        const planName = data.planName || data.plan_name || '';
-        const isPro = planName.toLowerCase().includes('pro');
+      // ========== APP LIFECYCLE EVENTS ==========
+      
+      case 'app.installed': {
+        // App installed on a location - set up with free plan
+        const companyId = data.companyId || data.company_id;
+        const appId = data.appId || data.app_id;
         
         if (locationId) {
           await retryQuery(
             () => pool.query(
               `UPDATE oauth_tokens 
-               SET subscription_status = $1, 
-                   ghl_subscription_id = $2,
+               SET plan_type = 'free',
+                   subscription_status = 'active',
+                   ghl_company_id = $1,
+                   ghl_app_id = $2,
+                   installed_at = NOW(),
                    updated_at = NOW() 
                WHERE location_id = $3`,
-              [isPro ? 'pro' : 'free', data.subscriptionId || data.orderId, locationId]
+              [companyId, appId, locationId]
             ),
             3,
             1000
           );
           
-          logger.info('✅ GHL subscription activated', {
+          logger.info('🎉 App installed', {
             locationId,
-            plan: isPro ? 'pro' : 'free',
+            companyId,
+            appId,
+            eventType
+          });
+        }
+        break;
+      }
+
+      case 'app.uninstalled': {
+        // App uninstalled - clean up or mark inactive
+        if (locationId) {
+          await retryQuery(
+            () => pool.query(
+              `UPDATE oauth_tokens 
+               SET plan_type = 'free',
+                   subscription_status = 'uninstalled',
+                   uninstalled_at = NOW(),
+                   updated_at = NOW() 
+               WHERE location_id = $1`,
+              [locationId]
+            ),
+            3,
+            1000
+          );
+          
+          logger.info('👋 App uninstalled', { locationId, eventType });
+        }
+        break;
+      }
+
+      // ========== SUBSCRIPTION EVENTS ==========
+
+      case 'subscription.created': {
+        // New subscription created via GHL Marketplace
+        const planId = data.planId || data.plan_id;
+        const planName = (data.planName || data.plan_name || '').toLowerCase();
+        const subscriptionId = data.subscriptionId || data.subscription_id || data.id;
+        
+        // Determine plan type from plan name
+        let planType: 'free' | 'pro' | 'agency' = 'free';
+        if (planName.includes('agency')) {
+          planType = 'agency';
+        } else if (planName.includes('pro') || planName.includes('premium')) {
+          planType = 'pro';
+        }
+        
+        if (locationId) {
+          await retryQuery(
+            () => pool.query(
+              `UPDATE oauth_tokens 
+               SET plan_type = $1,
+                   subscription_status = 'active',
+                   ghl_subscription_id = $2,
+                   ghl_plan_id = $3,
+                   subscription_started_at = NOW(),
+                   updated_at = NOW() 
+               WHERE location_id = $4`,
+              [planType, subscriptionId, planId, locationId]
+            ),
+            3,
+            1000
+          );
+          
+          logger.info('✅ Subscription created', {
+            locationId,
+            planType,
+            planId,
+            subscriptionId,
+            eventType
+          });
+        }
+        break;
+      }
+
+      case 'subscription.updated': {
+        // Subscription plan changed (upgrade/downgrade)
+        const planId = data.planId || data.plan_id;
+        const planName = (data.planName || data.plan_name || '').toLowerCase();
+        const subscriptionId = data.subscriptionId || data.subscription_id || data.id;
+        const status = data.status?.toLowerCase();
+        
+        // Determine plan type from plan name
+        let planType: 'free' | 'pro' | 'agency' = 'free';
+        if (planName.includes('agency')) {
+          planType = 'agency';
+        } else if (planName.includes('pro') || planName.includes('premium')) {
+          planType = 'pro';
+        }
+        
+        if (locationId) {
+          await retryQuery(
+            () => pool.query(
+              `UPDATE oauth_tokens 
+               SET plan_type = $1,
+                   subscription_status = $2,
+                   ghl_subscription_id = $3,
+                   ghl_plan_id = $4,
+                   updated_at = NOW() 
+               WHERE location_id = $5`,
+              [planType, status || 'active', subscriptionId, planId, locationId]
+            ),
+            3,
+            1000
+          );
+          
+          logger.info('🔄 Subscription updated', {
+            locationId,
+            planType,
+            planId,
+            status,
+            eventType
+          });
+        }
+        break;
+      }
+
+      case 'subscription.cancelled': {
+        // Subscription cancelled - downgrade to free
+        const subscriptionId = data.subscriptionId || data.subscription_id || data.id;
+        const cancelAt = data.cancelAt || data.cancel_at;
+        
+        if (locationId) {
+          await retryQuery(
+            () => pool.query(
+              `UPDATE oauth_tokens 
+               SET plan_type = 'free',
+                   subscription_status = 'cancelled',
+                   subscription_ends_at = $1,
+                   updated_at = NOW() 
+               WHERE location_id = $2`,
+              [cancelAt ? new Date(cancelAt) : new Date(), locationId]
+            ),
+            3,
+            1000
+          );
+          
+          logger.info('❌ Subscription cancelled', {
+            locationId,
+            subscriptionId,
+            cancelAt,
+            eventType
+          });
+        }
+        break;
+      }
+
+      // ========== LEGACY EVENT SUPPORT ==========
+      
+      case 'SaasPlanCreate':
+      case 'ORDER_COMPLETED': {
+        // User subscribed via GHL (legacy)
+        const planName = (data.planName || data.plan_name || '').toLowerCase();
+        let planType: 'free' | 'pro' | 'agency' = 'free';
+        if (planName.includes('agency')) {
+          planType = 'agency';
+        } else if (planName.includes('pro') || planName.includes('premium')) {
+          planType = 'pro';
+        }
+        
+        if (locationId) {
+          await retryQuery(
+            () => pool.query(
+              `UPDATE oauth_tokens 
+               SET plan_type = $1,
+                   subscription_status = 'active', 
+                   ghl_subscription_id = $2,
+                   updated_at = NOW() 
+               WHERE location_id = $3`,
+              [planType, data.subscriptionId || data.orderId, locationId]
+            ),
+            3,
+            1000
+          );
+          
+          logger.info('✅ GHL subscription activated (legacy)', {
+            locationId,
+            planType,
             eventType
           });
         }
@@ -505,23 +685,25 @@ webhookRouter.post('/events', async (req, res) => {
 
       case 'OrderStatusUpdate': {
         const status = data.status?.toLowerCase();
-        const locationId = data.locationId || data.location_id;
+        const locId = data.locationId || data.location_id;
         
-        if (locationId) {
+        if (locId) {
           if (status === 'cancelled' || status === 'refunded' || status === 'failed') {
             await retryQuery(
               () => pool.query(
                 `UPDATE oauth_tokens 
-                 SET subscription_status = 'free', updated_at = NOW() 
-                 WHERE location_id = $1`,
-                [locationId]
+                 SET plan_type = 'free',
+                     subscription_status = $1,
+                     updated_at = NOW() 
+                 WHERE location_id = $2`,
+                [status, locId]
               ),
               3,
               1000
             );
             
-            logger.info('❌ GHL subscription cancelled', {
-              locationId,
+            logger.info('❌ GHL subscription status change', {
+              locationId: locId,
               status,
               eventType
             });
@@ -536,7 +718,8 @@ webhookRouter.post('/events', async (req, res) => {
           await retryQuery(
             () => pool.query(
               `UPDATE oauth_tokens 
-               SET subscription_status = 'free', 
+               SET plan_type = 'free',
+                   subscription_status = 'cancelled', 
                    subscription_ends_at = NOW(),
                    updated_at = NOW() 
                WHERE location_id = $1`,
@@ -546,7 +729,7 @@ webhookRouter.post('/events', async (req, res) => {
             1000
           );
           
-          logger.info('❌ GHL subscription cancelled', { locationId, eventType });
+          logger.info('❌ GHL subscription cancelled (legacy)', { locationId, eventType });
         }
         break;
       }

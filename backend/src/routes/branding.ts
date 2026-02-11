@@ -5,6 +5,7 @@
 
 import { Router } from 'express';
 import { requireAuth, requireGHLConnection } from '../middleware/auth';
+import { attachPlanInfo, requireAgency } from '../middleware/plan-gate';
 import { ApiResponse } from '../lib/response';
 import { asyncHandler } from '../middleware/error-handler';
 import { logger } from '../lib/logger';
@@ -42,10 +43,13 @@ interface ReportSettings {
  * GET /api/branding
  * Fetch current branding settings for the location
  */
+// Agency feature: White-label branding
 brandingRouter.get(
   '/',
   requireAuth,
   requireGHLConnection,
+  attachPlanInfo,
+  requireAgency,
   asyncHandler(async (req: any, res: any) => {
     const locationId = req.locationId;
     
@@ -117,10 +121,13 @@ brandingRouter.get(
  * PUT /api/branding
  * Update branding settings
  */
+// Agency feature: Update white-label branding
 brandingRouter.put(
   '/',
   requireAuth,
   requireGHLConnection,
+  attachPlanInfo,
+  requireAgency,
   asyncHandler(async (req: any, res: any) => {
     const locationId = req.locationId;
     const { branding, reportSettings } = req.body;

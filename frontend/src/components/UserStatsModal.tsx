@@ -227,7 +227,7 @@ const UserStatsModal: React.FC<UserStatsModalProps> = ({ userId, userName, onClo
                       fontSize={10}
                     />
                     <YAxis stroke={colors.subtext} tickFormatter={(v) => formatTime(v)} fontSize={10} />
-                    <RechartsTooltip formatter={(v: number) => [formatTime(v), 'Avg']} />
+                    <RechartsTooltip formatter={(v: any) => [formatTime(v), 'Avg']} />
                     <Area type="monotone" dataKey="avgResponseTime" stroke="#667eea" fill="url(#userGradient)" />
                   </AreaChart>
                 </ResponsiveContainer>

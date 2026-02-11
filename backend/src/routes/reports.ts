@@ -5,6 +5,7 @@
 
 import { Router } from 'express';
 import { requireAuth, requireGHLConnection } from '../middleware/auth';
+import { attachPlanInfo, requirePro, requireAgency } from '../middleware/plan-gate';
 import { ApiResponse } from '../lib/response';
 import { asyncHandler } from '../middleware/error-handler';
 import { logger } from '../lib/logger';
@@ -190,10 +191,13 @@ function generateDailyReportHTML(data: DailyReportData, locationName: string, re
  * POST /api/reports/daily
  * Generate and optionally send a daily email report
  */
+// Pro feature: Email reports
 reportsRouter.post(
   '/daily',
   requireAuth,
   requireGHLConnection,
+  attachPlanInfo,
+  requirePro,
   asyncHandler(async (req: any, res: any) => {
     const locationId = req.locationId;
     const { sendTo, preview } = req.body;

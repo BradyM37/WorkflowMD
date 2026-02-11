@@ -322,7 +322,7 @@ const ROIDashboard: React.FC<{ days?: number }> = ({ days = 30 }) => {
                         border: `1px solid ${isDarkMode ? '#303030' : '#f0f0f0'}`,
                         borderRadius: 8
                       }}
-                      formatter={(value: number, name: string) => {
+                      formatter={(value: any, name: any) => {
                         if (name === 'leads') return [value, 'Total Leads'];
                         if (name === 'conversions') return [value, 'Converted'];
                         return [value, name];

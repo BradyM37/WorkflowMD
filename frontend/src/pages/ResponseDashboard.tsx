@@ -364,6 +364,9 @@ const ResponseDashboard: React.FC = () => {
     }
   }, [syncStatus?.status, queryClient]);
 
+  // Extract missed conversations from query data
+  const missed: MissedConversation[] = missedData?.conversations || [];
+
   // Browser notifications for leads waiting >5 min
   useEffect(() => {
     if (!missed || missed.length === 0) return;
@@ -426,7 +429,7 @@ const ResponseDashboard: React.FC = () => {
   };
 
   const trend: TrendDataPoint[] = trendData?.trend || [];
-  const missed: MissedConversation[] = missedData?.conversations || [];
+  // missed is declared earlier (before the useEffect that needs it)
   const team: TeamMember[] = teamData?.team || [];
   const channels: ChannelMetric[] = channelData?.channels || [];
 
@@ -1053,8 +1056,8 @@ const ResponseDashboard: React.FC = () => {
                     fontSize={12}
                   />
                   <RechartsTooltip 
-                    formatter={(value: number) => [formatTimeVerbose(value), 'Avg Response']}
-                    labelFormatter={(date) => new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                    formatter={(value: any) => [formatTimeVerbose(value), 'Avg Response']}
+                    labelFormatter={(date: any) => new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
                     contentStyle={{ 
                       backgroundColor: isDarkMode ? '#1f1f1f' : '#fff',
                       border: `1px solid ${colors.border}`,
@@ -1107,7 +1110,7 @@ const ResponseDashboard: React.FC = () => {
                     ))}
                   </Pie>
                   <RechartsTooltip 
-                    formatter={(value: number, name: string) => [`${value} conversations`, name]}
+                    formatter={(value: any, name: any) => [`${value} conversations`, name]}
                     contentStyle={{ 
                       backgroundColor: isDarkMode ? '#1f1f1f' : '#fff',
                       border: `1px solid ${colors.border}`,
@@ -1242,7 +1245,7 @@ const ResponseDashboard: React.FC = () => {
                           tickFormatter={(val) => val?.toUpperCase()}
                         />
                         <RechartsTooltip 
-                          formatter={(value: number) => [formatTimeVerbose(value), 'Avg Response']}
+                          formatter={(value: any) => [formatTimeVerbose(value), 'Avg Response']}
                         />
                         <Bar 
                           dataKey="avgResponseTime" 
