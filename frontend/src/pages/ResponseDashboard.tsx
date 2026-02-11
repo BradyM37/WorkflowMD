@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { 
   Card, 
@@ -17,11 +17,11 @@ import {
   Tooltip,
   Badge,
   Empty,
-  Segmented,
   Skeleton,
   message,
   Modal,
-  Result
+  Result,
+  Drawer
 } from 'antd';
 import {
   ClockCircleOutlined,
@@ -49,7 +49,8 @@ import {
   LinkOutlined,
   SettingOutlined,
   DownloadOutlined,
-  FilePdfOutlined
+  FilePdfOutlined,
+  MenuUnfoldOutlined
 } from '@ant-design/icons';
 import { 
   LineChart, 
@@ -76,6 +77,7 @@ import { useNavigate } from 'react-router-dom';
 import ResponseHeatmap from '../components/ResponseHeatmap';
 import PeriodComparison from '../components/PeriodComparison';
 import ConversationModal from '../components/ConversationModal';
+import UserStatsModal from '../components/UserStatsModal';
 import './ResponseDashboard.css';
 
 const { Title, Text, Paragraph } = Typography;
@@ -241,6 +243,7 @@ const ResponseDashboard: React.FC = () => {
   const [selectedConversation, setSelectedConversation] = useState<{ id: string; ghlId: string } | null>(null);
   const [notifiedLeads, setNotifiedLeads] = useState<Set<string>>(new Set());
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<{ id: string; name: string } | null>(null);
 
   // Fetch sync status
   const { data: syncStatusData } = useQuery<{ data: SyncStatus }>(
@@ -282,6 +285,14 @@ const ResponseDashboard: React.FC = () => {
     () => api.get(`/api/metrics/team?days=${selectedDays}`).then(res => res.data.data),
     { enabled: ghlConnected }
   );
+
+  // Fetch team badges
+  const { data: badgesData } = useQuery<{ data: { badges: Record<string, { type: string; count: number; icon: string; label: string }[]> } }>(
+    'team-badges',
+    () => api.get('/api/metrics/team/badges').then(res => res.data),
+    { enabled: ghlConnected }
+  );
+  const teamBadges = badgesData?.data?.badges || {};
 
   // Fetch channel metrics
   const { data: channelData, isLoading: loadingChannels } = useQuery(
@@ -493,9 +504,9 @@ const ResponseDashboard: React.FC = () => {
       key: 'rank',
       width: 50,
       render: (_: any, __: any, index: number) => {
-        const badges = ['🥇', '🥈', '🥉'];
+        const rankBadges = ['🥇', '🥈', '🥉'];
         return index < 3 ? (
-          <span style={{ fontSize: 20 }}>{badges[index]}</span>
+          <span style={{ fontSize: 20 }}>{rankBadges[index]}</span>
         ) : (
           <Text type="secondary">{index + 1}</Text>
         );
@@ -505,14 +516,22 @@ const ResponseDashboard: React.FC = () => {
       title: 'Team Member',
       dataIndex: 'userName',
       key: 'userName',
-      render: (name: string, record: TeamMember, index: number) => (
-        <Space>
-          <Text strong style={{ color: index === 0 ? '#52c41a' : undefined }}>
-            {name || 'Unknown User'}
-          </Text>
-          {index === 0 && <Tag color="green">Fastest</Tag>}
-        </Space>
-      )
+      render: (name: string, record: TeamMember, index: number) => {
+        const userBadges = teamBadges[record.userId] || [];
+        return (
+          <Space>
+            <Text strong style={{ color: index === 0 ? '#52c41a' : undefined, cursor: 'pointer' }}>
+              {name || 'Unknown User'}
+            </Text>
+            {index === 0 && <Tag color="green">Fastest</Tag>}
+            {userBadges.slice(0, 4).map((b, i) => (
+              <Tooltip key={i} title={`${b.label} (×${b.count})`}>
+                <span style={{ fontSize: 14 }}>{b.icon}</span>
+              </Tooltip>
+            ))}
+          </Space>
+        );
+      }
     },
     {
       title: 'Avg Response',
@@ -700,6 +719,13 @@ const ResponseDashboard: React.FC = () => {
         conversationId={selectedConversation?.id || null}
         ghlConversationId={selectedConversation?.ghlId || null}
         onClose={() => setSelectedConversation(null)}
+      />
+      
+      {/* User Stats Modal */}
+      <UserStatsModal
+        userId={selectedUser?.id || null}
+        userName={selectedUser?.name || ''}
+        onClose={() => setSelectedUser(null)}
       />
       
       {/* Header */}
@@ -1169,6 +1195,11 @@ const ResponseDashboard: React.FC = () => {
                   rowKey="userId"
                   loading={loadingTeam}
                   pagination={false}
+                  onRow={(record: TeamMember) => ({
+                    onClick: () => setSelectedUser({ id: record.userId, name: record.userName }),
+                    style: { cursor: 'pointer' }
+                  })}
+                  rowClassName="clickable-row"
                 />
               )
             },

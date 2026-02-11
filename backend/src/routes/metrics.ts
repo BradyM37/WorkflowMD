@@ -15,6 +15,13 @@ import {
   getDailyTrend,
   BENCHMARKS
 } from '../lib/response-analyzer';
+import { getBadgeCounts, getUserBadges, BADGE_INFO } from '../lib/badges';
+import { 
+  generateInsights, 
+  dismissInsight, 
+  markInsightAddressed,
+  getDismissedInsights
+} from '../lib/insights-engine';
 import { getLocationUsers, getConversationMessages } from '../lib/ghl-conversations';
 import { pool } from '../lib/database';
 
@@ -313,6 +320,362 @@ metricsRouter.get(
       status: state.sync_status,
       lastSyncAt: state.last_sync_at,
       error: state.error_message
+    });
+  })
+);
+
+/**
+ * GET /api/metrics/team/badges
+ * Get badges for all team members
+ */
+metricsRouter.get(
+  '/team/badges',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    
+    // Get all users who have conversations
+    const userResult = await pool.query(`
+      SELECT DISTINCT assigned_user_id as user_id
+      FROM conversations
+      WHERE location_id = $1 AND assigned_user_id IS NOT NULL
+    `, [locationId]);
+    
+    const userIds = userResult.rows.map(r => r.user_id);
+    const badgeCounts = await getBadgeCounts(locationId, userIds);
+    
+    // Convert Map to object for JSON response
+    const badges: Record<string, { type: string; count: number; icon: string; label: string }[]> = {};
+    for (const [userId, counts] of badgeCounts) {
+      badges[userId] = counts.map(c => ({
+        type: c.type,
+        count: c.count,
+        icon: BADGE_INFO[c.type]?.icon || '🏅',
+        label: BADGE_INFO[c.type]?.label || c.type
+      }));
+    }
+    
+    return ApiResponse.success(res, { badges, badgeInfo: BADGE_INFO });
+  })
+);
+
+/**
+ * GET /api/metrics/user/:userId
+ * Get detailed stats for a specific user (for drilldown modal)
+ */
+metricsRouter.get(
+  '/user/:userId',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const userId = req.params.userId;
+    const days = parseInt(req.query.days as string) || 30;
+    
+    logger.info('Fetching user detail', { locationId, userId, days, requestId: req.id });
+    
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    // Get user aggregate stats
+    const statsResult = await pool.query(`
+      SELECT 
+        assigned_user_name as user_name,
+        COUNT(*) as total_responses,
+        AVG(response_time_seconds)::INTEGER as avg_response_time,
+        MIN(response_time_seconds) as fastest_response,
+        MAX(response_time_seconds) as slowest_response,
+        COUNT(*) FILTER (WHERE is_missed = true) as missed_count,
+        COUNT(*) FILTER (WHERE response_time_seconds < 60) as under_1min,
+        COUNT(*) FILTER (WHERE response_time_seconds < 300) as under_5min
+      FROM conversations
+      WHERE location_id = $1 
+        AND assigned_user_id = $2
+        AND first_inbound_at >= $3
+    `, [locationId, userId, startDate]);
+    
+    const stats = statsResult.rows[0] || {};
+    
+    // Get daily breakdown for chart
+    const dailyResult = await pool.query(`
+      SELECT 
+        DATE(first_inbound_at) as date,
+        AVG(response_time_seconds)::INTEGER as avg_response_time,
+        COUNT(*) as total_conversations,
+        COUNT(*) FILTER (WHERE is_missed = true) as missed_count
+      FROM conversations
+      WHERE location_id = $1 
+        AND assigned_user_id = $2
+        AND first_inbound_at >= $3
+        AND first_inbound_at IS NOT NULL
+      GROUP BY DATE(first_inbound_at)
+      ORDER BY date ASC
+    `, [locationId, userId, startDate]);
+    
+    // Get recent conversations
+    const recentResult = await pool.query(`
+      SELECT 
+        id, contact_name, channel, first_inbound_at, 
+        first_response_at, response_time_seconds, is_missed
+      FROM conversations
+      WHERE location_id = $1 
+        AND assigned_user_id = $2
+        AND first_inbound_at IS NOT NULL
+      ORDER BY first_inbound_at DESC
+      LIMIT 10
+    `, [locationId, userId]);
+    
+    // Get user badges
+    const badges = await getUserBadges(locationId, userId);
+    
+    return ApiResponse.success(res, {
+      userId,
+      userName: stats.user_name || 'Unknown',
+      stats: {
+        totalResponses: parseInt(stats.total_responses) || 0,
+        avgResponseTime: stats.avg_response_time || 0,
+        fastestResponse: stats.fastest_response || 0,
+        slowestResponse: stats.slowest_response || 0,
+        missedCount: parseInt(stats.missed_count) || 0,
+        under1Min: parseInt(stats.under_1min) || 0,
+        under5Min: parseInt(stats.under_5min) || 0
+      },
+      dailyTrend: dailyResult.rows.map(row => ({
+        date: row.date.toISOString().split('T')[0],
+        avgResponseTime: row.avg_response_time || 0,
+        totalConversations: parseInt(row.total_conversations),
+        missedCount: parseInt(row.missed_count)
+      })),
+      recentConversations: recentResult.rows.map(row => ({
+        id: row.id,
+        contactName: row.contact_name,
+        channel: row.channel,
+        firstInboundAt: row.first_inbound_at,
+        firstResponseAt: row.first_response_at,
+        responseTimeSeconds: row.response_time_seconds,
+        isMissed: row.is_missed
+      })),
+      badges: badges.map(b => ({
+        type: b.badgeType,
+        earnedAt: b.earnedAt,
+        icon: BADGE_INFO[b.badgeType]?.icon || '🏅',
+        label: BADGE_INFO[b.badgeType]?.label || b.badgeType
+      }))
+    });
+  })
+);
+
+/**
+ * GET /api/metrics/goals
+ * Get goal progress for the current period
+ */
+metricsRouter.get(
+  '/goals',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const days = parseInt(req.query.days as string) || 7;
+    
+    logger.info('Fetching goal progress', { locationId, days, requestId: req.id });
+    
+    // Get user's target response time setting
+    const settingsResult = await pool.query(
+      `SELECT target_response_time, goal_celebration_shown_date 
+       FROM alert_settings WHERE location_id = $1`,
+      [locationId]
+    );
+    
+    const targetResponseTime = settingsResult.rows[0]?.target_response_time || 120; // Default 2 minutes
+    const lastCelebrationDate = settingsResult.rows[0]?.goal_celebration_shown_date;
+    
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    // Calculate goal progress
+    const progressResult = await pool.query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE response_time_seconds IS NOT NULL) as total_responses,
+        COUNT(*) FILTER (WHERE response_time_seconds <= $3) as responses_meeting_goal,
+        AVG(response_time_seconds)::INTEGER as avg_response_time,
+        MIN(response_time_seconds) as best_response_time,
+        COUNT(*) FILTER (WHERE response_time_seconds IS NOT NULL AND response_time_seconds <= 60) as under_1min,
+        COUNT(*) FILTER (WHERE response_time_seconds IS NOT NULL AND response_time_seconds <= 300) as under_5min
+      FROM conversations
+      WHERE location_id = $1 
+        AND first_inbound_at >= $2
+        AND first_inbound_at IS NOT NULL
+    `, [locationId, startDate, targetResponseTime]);
+    
+    const stats = progressResult.rows[0] || {};
+    const totalResponses = parseInt(stats.total_responses) || 0;
+    const responsesMeetingGoal = parseInt(stats.responses_meeting_goal) || 0;
+    const goalPercentage = totalResponses > 0 
+      ? Math.round((responsesMeetingGoal / totalResponses) * 100) 
+      : 0;
+    
+    // Check if goal was achieved today (>= 90% compliance for the day)
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    
+    const todayResult = await pool.query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE response_time_seconds IS NOT NULL) as total_responses,
+        COUNT(*) FILTER (WHERE response_time_seconds <= $3) as responses_meeting_goal
+      FROM conversations
+      WHERE location_id = $1 
+        AND first_inbound_at >= $2
+        AND first_inbound_at IS NOT NULL
+    `, [locationId, todayStart, targetResponseTime]);
+    
+    const todayStats = todayResult.rows[0] || {};
+    const todayTotal = parseInt(todayStats.total_responses) || 0;
+    const todayMeetingGoal = parseInt(todayStats.responses_meeting_goal) || 0;
+    const todayPercentage = todayTotal > 0 
+      ? Math.round((todayMeetingGoal / todayTotal) * 100) 
+      : 0;
+    
+    // Determine if we should show celebration (goal achieved today and not shown yet)
+    const today = new Date().toISOString().split('T')[0];
+    const goalAchievedToday = todayTotal >= 3 && todayPercentage >= 90; // Need at least 3 responses and 90% compliance
+    const shouldCelebrate = goalAchievedToday && lastCelebrationDate !== today;
+    
+    // Format target for display
+    const formatTime = (seconds: number): string => {
+      if (seconds < 60) return `${seconds} seconds`;
+      if (seconds === 60) return '1 minute';
+      if (seconds < 3600) return `${Math.round(seconds / 60)} minutes`;
+      return `${(seconds / 3600).toFixed(1)} hours`;
+    };
+    
+    // Historical daily progress for trend
+    const dailyProgressResult = await pool.query(`
+      SELECT 
+        DATE(first_inbound_at) as date,
+        COUNT(*) FILTER (WHERE response_time_seconds IS NOT NULL) as total_responses,
+        COUNT(*) FILTER (WHERE response_time_seconds <= $3) as responses_meeting_goal
+      FROM conversations
+      WHERE location_id = $1 
+        AND first_inbound_at >= $2
+        AND first_inbound_at IS NOT NULL
+      GROUP BY DATE(first_inbound_at)
+      ORDER BY date ASC
+    `, [locationId, startDate, targetResponseTime]);
+    
+    const dailyProgress = dailyProgressResult.rows.map(row => ({
+      date: row.date.toISOString().split('T')[0],
+      totalResponses: parseInt(row.total_responses) || 0,
+      responsesMeetingGoal: parseInt(row.responses_meeting_goal) || 0,
+      percentage: parseInt(row.total_responses) > 0 
+        ? Math.round((parseInt(row.responses_meeting_goal) / parseInt(row.total_responses)) * 100)
+        : 0
+    }));
+    
+    return ApiResponse.success(res, {
+      goal: {
+        targetSeconds: targetResponseTime,
+        targetFormatted: formatTime(targetResponseTime)
+      },
+      progress: {
+        totalResponses,
+        responsesMeetingGoal,
+        percentage: goalPercentage,
+        avgResponseTime: stats.avg_response_time || 0,
+        bestResponseTime: stats.best_response_time || 0
+      },
+      today: {
+        totalResponses: todayTotal,
+        responsesMeetingGoal: todayMeetingGoal,
+        percentage: todayPercentage,
+        goalAchieved: goalAchievedToday
+      },
+      shouldCelebrate,
+      dailyProgress,
+      period: { days }
+    });
+  })
+);
+
+/**
+ * POST /api/metrics/goals/celebrate
+ * Mark celebration as shown for today (prevents repeat animations)
+ */
+metricsRouter.post(
+  '/goals/celebrate',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const today = new Date().toISOString().split('T')[0];
+    
+    await pool.query(`
+      UPDATE alert_settings 
+      SET goal_celebration_shown_date = $2
+      WHERE location_id = $1
+    `, [locationId, today]);
+    
+    logger.info('Goal celebration marked as shown', { locationId, date: today });
+    
+    return ApiResponse.success(res, { 
+      message: 'Celebration acknowledged',
+      date: today
+    });
+  })
+);
+
+/**
+ * GET /api/metrics/activity
+ * Get recent activity feed (responses in real-time)
+ */
+metricsRouter.get(
+  '/activity',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+    
+    logger.info('Fetching activity feed', { locationId, limit, requestId: req.id });
+    
+    // Get recent conversations with responses from last 24 hours
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    
+    const result = await pool.query(`
+      SELECT 
+        id,
+        contact_name,
+        channel,
+        first_inbound_at,
+        first_response_at,
+        response_time_seconds,
+        is_missed,
+        assigned_user_id,
+        assigned_user_name
+      FROM conversations
+      WHERE location_id = $1 
+        AND first_inbound_at >= $2
+        AND first_inbound_at IS NOT NULL
+      ORDER BY 
+        COALESCE(first_response_at, first_inbound_at) DESC
+      LIMIT $3
+    `, [locationId, oneDayAgo, limit]);
+    
+    const activities = result.rows.map(row => ({
+      id: row.id,
+      type: row.is_missed ? 'missed' : 'response',
+      responderName: row.assigned_user_name || 'Team',
+      contactName: row.contact_name || 'Unknown Contact',
+      channel: row.channel || 'unknown',
+      responseTimeSeconds: row.response_time_seconds,
+      timestamp: row.first_response_at || row.first_inbound_at,
+      isMissed: row.is_missed
+    }));
+    
+    return ApiResponse.success(res, { 
+      activities,
+      count: activities.length,
+      period: '24h'
     });
   })
 );

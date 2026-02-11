@@ -12,6 +12,7 @@ import {
   GHLConversation,
   GHLMessage 
 } from './ghl-conversations';
+import { checkAndAwardBadges } from './badges';
 
 // Industry benchmarks (in seconds)
 export const BENCHMARKS = {
@@ -118,6 +119,9 @@ export async function syncConversations(locationId: string): Promise<{
     
     // Recalculate daily metrics
     await recalculateDailyMetrics(locationId);
+    
+    // Check and award badges
+    await checkAndAwardBadges(locationId);
     
     return { synced, newConversations, errors };
   } catch (error) {
