@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '../utils/toast';
 
@@ -25,8 +25,8 @@ interface ShortcutConfig {
 export const useKeyboardShortcuts = (shortcuts?: ShortcutConfig[]) => {
   const navigate = useNavigate();
 
-  // Default global shortcuts
-  const defaultShortcuts: ShortcutConfig[] = [
+  // Default global shortcuts - memoized with navigate dependency
+  const defaultShortcuts = useMemo<ShortcutConfig[]>(() => [
     {
       key: 'd',
       ctrl: true,
@@ -87,9 +87,11 @@ export const useKeyboardShortcuts = (shortcuts?: ShortcutConfig[]) => {
       },
       global: true,
     },
-  ];
+  ], [navigate]);
 
-  const allShortcuts = [...defaultShortcuts, ...(shortcuts || [])];
+  const allShortcuts = useMemo(() => 
+    [...defaultShortcuts, ...(shortcuts || [])], 
+    [defaultShortcuts, shortcuts]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     // Don't trigger shortcuts when typing in input fields (unless global)

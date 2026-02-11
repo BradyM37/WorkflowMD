@@ -33,7 +33,7 @@ import {
 import api from '../services/api';
 import { useTheme } from '../contexts/ThemeContext';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface UserStatsModalProps {
   userId: string | null;

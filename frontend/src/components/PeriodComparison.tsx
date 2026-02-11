@@ -13,7 +13,7 @@ import {
 import api from '../services/api';
 import { useTheme } from '../contexts/ThemeContext';
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 interface ComparisonData {
   current: {

@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { 
   Card, 
   Row, 
   Col, 
-  Statistic, 
   Typography, 
   Table, 
   Tag, 
@@ -18,7 +17,6 @@ import {
   Badge,
   Empty,
   Skeleton,
-  message,
   Modal,
   Result,
   Drawer
@@ -27,7 +25,6 @@ import {
   ClockCircleOutlined,
   ThunderboltOutlined,
   WarningOutlined,
-  TeamOutlined,
   SyncOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
@@ -42,9 +39,6 @@ import {
   RocketOutlined,
   TrophyOutlined,
   FireOutlined,
-  ArrowUpOutlined,
-  ArrowDownOutlined,
-  ReloadOutlined,
   InfoCircleOutlined,
   LinkOutlined,
   SettingOutlined,
@@ -54,8 +48,6 @@ import {
   DollarOutlined
 } from '@ant-design/icons';
 import { 
-  LineChart, 
-  Line, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -90,7 +82,7 @@ import AnimatedStatCard from '../components/AnimatedStatCard';
 import { useConfetti } from '../hooks/useConfetti';
 import './ResponseDashboard.css';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 // Types
 interface ResponseMetrics {
@@ -188,28 +180,6 @@ const formatTimeVerbose = (seconds: number): string => {
   return mins > 0 ? `${hours}h ${mins}m` : `${hours} hours`;
 };
 
-const getGradeColor = (grade: string): string => {
-  const colors: Record<string, string> = {
-    'Excellent': '#52c41a',
-    'Good': '#73d13d',
-    'Average': '#faad14',
-    'Poor': '#ff7a45',
-    'Critical': '#ff4d4f'
-  };
-  return colors[grade] || '#8c8c8c';
-};
-
-const getGradeEmoji = (grade: string): string => {
-  const emojis: Record<string, string> = {
-    'Excellent': '🚀',
-    'Good': '✅',
-    'Average': '⚡',
-    'Poor': '⚠️',
-    'Critical': '🔥'
-  };
-  return emojis[grade] || '📊';
-};
-
 const getChannelIcon = (channel: string): React.ReactNode => {
   const icons: Record<string, React.ReactNode> = {
     'sms': <MessageOutlined style={{ color: '#52c41a' }} />,
@@ -237,8 +207,6 @@ const getChannelColor = (channel: string): string => {
   };
   return colors[channel?.toLowerCase()] || '#8c8c8c';
 };
-
-const CHART_COLORS = ['#52c41a', '#73d13d', '#faad14', '#ff7a45', '#ff4d4f'];
 
 // Industry benchmark - 78% of customers buy from the first responder
 const SPEED_TO_LEAD_STAT = "78% of customers buy from whoever responds first";
@@ -301,7 +269,7 @@ const ResponseDashboard: React.FC = () => {
   );
 
   // Fetch missed conversations
-  const { data: missedData, isLoading: loadingMissed, refetch: refetchMissed } = useQuery(
+  const { data: missedData, isLoading: loadingMissed } = useQuery(
     'metrics-missed',
     () => api.get('/api/metrics/missed?limit=20').then(res => res.data.data),
     { enabled: ghlConnected }
@@ -323,7 +291,7 @@ const ResponseDashboard: React.FC = () => {
   const teamBadges = badgesData?.data?.badges || {};
 
   // Fetch channel metrics
-  const { data: channelData, isLoading: loadingChannels } = useQuery(
+  const { data: channelData } = useQuery(
     ['metrics-channels', selectedDays],
     () => api.get(`/api/metrics/channels?days=${selectedDays}`).then(res => res.data.data),
     { enabled: ghlConnected }
@@ -368,7 +336,8 @@ const ResponseDashboard: React.FC = () => {
   }, [syncStatus?.status, queryClient]);
 
   // Extract missed conversations from query data
-  const missed: MissedConversation[] = missedData?.conversations || [];
+  const missed = useMemo<MissedConversation[]>(() => 
+    missedData?.conversations || [], [missedData?.conversations]);
 
   // Browser notifications for leads waiting >5 min
   useEffect(() => {

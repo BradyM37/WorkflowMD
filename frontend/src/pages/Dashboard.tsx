@@ -31,7 +31,7 @@ import LoadingState from '../components/LoadingState';
 import ScheduleModal from '../components/ScheduleModal';
 import ScanHistoryPanel from '../components/ScanHistoryPanel';
 import { toast, notify } from '../utils/toast';
-import { MOCK_WORKFLOWS, createMockAnalysisForWorkflow } from '../mocks/mockData';
+// Mock workflows available from '../mocks/mockData' if needed
 import dayjs from 'dayjs';
 
 const { Title, Text, Paragraph } = Typography;
@@ -158,8 +158,7 @@ const Dashboard: React.FC = () => {
   // Fetch workflows from API
   const {
     data: workflows,
-    isLoading: loadingWorkflows,
-    refetch: refetchWorkflows
+    isLoading: loadingWorkflows
   } = useQuery<Workflow[]>(
     'workflows',
     () => {

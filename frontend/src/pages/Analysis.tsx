@@ -613,19 +613,4 @@ Low Priority: ${issues.filter((i: Issue) => i.type === 'low').length}
   );
 };
 
-// Helper function for Statistic component
-interface StatisticProps {
-  title: string;
-  value: string | number;
-  valueStyle?: React.CSSProperties;
-  titleStyle?: React.CSSProperties;
-}
-
-const Statistic: React.FC<StatisticProps> = ({ title, value, valueStyle, titleStyle }) => (
-  <div>
-    <Text style={{ fontSize: '12px', color: '#8c8c8c', ...titleStyle }}>{title}</Text>
-    <div style={{ fontSize: '24px', fontWeight: 'bold', ...valueStyle }}>{value}</div>
-  </div>
-);
-
 export default Analysis;

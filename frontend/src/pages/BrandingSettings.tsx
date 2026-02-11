@@ -4,7 +4,7 @@
  * Premium feature - $50/month upsell
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { 
   Card, 
@@ -16,7 +16,6 @@ import {
   Divider,
   Alert,
   Spin,
-  Upload,
   Row,
   Col,
   Table,
@@ -24,7 +23,6 @@ import {
   Modal,
   Tag,
   Tooltip,
-  InputNumber,
   Switch
 } from 'antd';
 import {
@@ -37,9 +35,7 @@ import {
   EyeOutlined,
   DownloadOutlined,
   LinkOutlined,
-  CheckCircleOutlined,
-  UploadOutlined,
-  ReloadOutlined
+  CheckCircleOutlined
 } from '@ant-design/icons';
 import { toast } from 'react-hot-toast';
 import api from '../services/api';
@@ -49,22 +45,7 @@ import { useNavigate } from 'react-router-dom';
 
 const { Title, Text, Paragraph } = Typography;
 
-interface BrandingData {
-  companyName: string | null;
-  tagline: string | null;
-  logoUrl: string | null;
-  primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
-}
-
-interface ReportSettingsData {
-  includeBranding: boolean;
-  customFooterText: string | null;
-  hidePoweredBy: boolean;
-  emailFromName: string | null;
-  reportTitleTemplate: string;
-}
+// BrandingData and ReportSettingsData types - see API response format
 
 interface SharedLink {
   id: string;
@@ -91,7 +72,7 @@ const BrandingSettings: React.FC = () => {
   const isPro = subscription === 'pro';
 
   // Fetch branding settings
-  const { data: brandingData, isLoading } = useQuery(
+  const { isLoading } = useQuery(
     'branding-settings',
     () => api.get('/api/branding').then(res => res.data.data),
     {

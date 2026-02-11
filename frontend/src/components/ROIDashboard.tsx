@@ -17,7 +17,6 @@ import {
   Col,
   Typography,
   Statistic,
-  Progress,
   Tooltip,
   Spin,
   Empty,
@@ -27,7 +26,6 @@ import {
   Tag,
   Alert,
   Divider,
-  Badge,
   Button
 } from 'antd';
 import {
@@ -42,7 +40,6 @@ import {
   RocketOutlined,
   InfoCircleOutlined,
   ArrowUpOutlined,
-  ArrowDownOutlined,
   ClockCircleOutlined
 } from '@ant-design/icons';
 import {
@@ -53,10 +50,7 @@ import {
   CartesianGrid,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
-  Cell,
-  FunnelChart,
-  Funnel,
-  LabelList
+  Cell
 } from 'recharts';
 import { useTheme } from '../contexts/ThemeContext';
 import api from '../services/api';

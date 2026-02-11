@@ -17,8 +17,6 @@ const COLORS = [
   '#5f27cd', '#00d2d3', '#1dd1a1', '#ff6b6b', '#c8d6e5'
 ];
 
-const SHAPES = ['square', 'circle', 'triangle'];
-
 export const useConfetti = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const particlesRef = useRef<ConfettiParticle[]>([]);
