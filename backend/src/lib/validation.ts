@@ -127,18 +127,26 @@ export function sanitizeObject(obj: any): any {
  * Validate environment variables on startup
  */
 export function validateEnvironment(): void {
+  // Only DATABASE_URL and ENCRYPTION_KEY are truly required
+  // GHL credentials are optional (app runs in demo mode without them)
   const requiredEnvVars = [
     'DATABASE_URL',
-    'ENCRYPTION_KEY',
-    'GHL_CLIENT_ID',
-    'GHL_CLIENT_SECRET',
-    'REDIRECT_URI'
+    'ENCRYPTION_KEY'
   ];
 
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
   if (missingVars.length > 0) {
     throw new Error(`❌ Missing required environment variables: ${missingVars.join(', ')}`);
+  }
+
+  // Warn about missing GHL credentials (app will run in demo mode)
+  const ghlVars = ['GHL_CLIENT_ID', 'GHL_CLIENT_SECRET', 'REDIRECT_URI'];
+  const missingGhl = ghlVars.filter(varName => !process.env[varName]);
+  
+  if (missingGhl.length > 0) {
+    console.warn(`⚠️  GHL credentials not configured: ${missingGhl.join(', ')}`);
+    console.warn('   App will run in DEMO MODE - GHL OAuth disabled');
   }
 
   // Validate ENCRYPTION_KEY length
