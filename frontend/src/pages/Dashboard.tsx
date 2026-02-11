@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useQuery } from 'react-query';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from 'react-query';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Card, List, Button, Typography, Space, Tag, Row, Col, 
   Statistic, Badge, Avatar, Input, Select, Empty,
@@ -80,7 +80,9 @@ function saveHistory(newAnalysis: AnalysisHistory) {
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { subscription } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
+  const { subscription, checkAuth } = useAuth();
   const { isDarkMode } = useTheme();
   const [analyzing, setAnalyzing] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -89,6 +91,29 @@ const Dashboard: React.FC = () => {
   const [localHistory, setLocalHistory] = useState<AnalysisHistory[]>(getSavedHistory());
   const [activeTab, setActiveTab] = useState('workflows');
   const [scheduleModalVisible, setScheduleModalVisible] = useState(false);
+
+  // Handle SSO success - clear demo mode and use real session
+  useEffect(() => {
+    const ssoSuccess = searchParams.get('sso');
+    if (ssoSuccess === 'success') {
+      // Clear demo mode to use real data
+      localStorage.removeItem('demo_mode');
+      localStorage.removeItem('user');
+      localStorage.removeItem('auth_token');
+      
+      // Re-check auth to pick up the real session from cookies
+      checkAuth();
+      
+      // Invalidate cached queries to fetch real data
+      queryClient.invalidateQueries('workflows');
+      
+      // Clean up the URL
+      searchParams.delete('sso');
+      setSearchParams(searchParams, { replace: true });
+      
+      toast.success('Connected to GoHighLevel!');
+    }
+  }, [searchParams, setSearchParams, checkAuth, queryClient]);
 
   // Theme-aware colors
   const colors = {

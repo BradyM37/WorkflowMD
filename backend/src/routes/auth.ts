@@ -659,8 +659,12 @@ authRouter.get('/status', optionalAuth, asyncHandler(async (req: any, res: any) 
 
     return ApiResponse.success(res, {
       authenticated: true,
-      userId: req.userId,
-      email: user?.email,
+      user: user ? {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        emailVerified: user.email_verified
+      } : null,
       ghlConnected: ghlResult.rows.length > 0,
       locationId: ghlResult.rows[0]?.location_id,
       subscription: ghlResult.rows[0]?.subscription_status || 'free',
