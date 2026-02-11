@@ -23,6 +23,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { notify } from '../utils/toast';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -60,9 +61,21 @@ const saveSchedule = (schedule: ScheduleConfig): void => {
 
 const ScheduleModal: React.FC<ScheduleModalProps> = ({ visible, onClose, workflows = [] }) => {
   const [form] = Form.useForm();
+  const { isDarkMode } = useTheme();
   const existingSchedule = getSchedule();
   
   const [enabled, setEnabled] = useState(existingSchedule?.enabled || false);
+
+  // Theme-aware colors
+  const colors = {
+    cardBg: isDarkMode ? '#1f1f1f' : '#f5f5f5',
+    titleText: isDarkMode ? '#ffffff' : '#1a1a2e',
+    bodyText: isDarkMode ? '#d9d9d9' : '#595959',
+    mutedText: isDarkMode ? '#8c8c8c' : '#595959',
+    border: isDarkMode ? '#303030' : '#d9d9d9',
+    listBg: isDarkMode ? '#262626' : '#fafafa',
+    listHover: isDarkMode ? '#1a3a5c' : '#e6f7ff',
+  };
   const [frequency, setFrequency] = useState<string>(existingSchedule?.frequency || 'daily');
   const [scope, setScope] = useState<string>(existingSchedule?.scope || 'all');
   const [selectedWorkflows, setSelectedWorkflows] = useState<string[]>(
@@ -197,17 +210,19 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({ visible, onClose, workflo
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '16px',
-          background: enabled ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)' : '#f5f5f5',
+          background: enabled 
+            ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%)' 
+            : colors.cardBg,
           borderRadius: '8px',
-          border: enabled ? '2px solid #667eea' : '1px solid transparent',
+          border: enabled ? '2px solid #667eea' : `1px solid ${colors.border}`,
           transition: 'all 0.3s ease',
           marginBottom: '16px'
         }}>
           <div>
-            <Text strong style={{ display: 'block', fontSize: '16px' }}>
+            <Text strong style={{ display: 'block', fontSize: '16px', color: colors.titleText }}>
               Enable Scheduled Scans
             </Text>
-            <Text type="secondary" style={{ fontSize: '13px', color: '#595959' }}>
+            <Text style={{ fontSize: '13px', color: colors.bodyText }}>
               Automatically scan workflows on a regular schedule
             </Text>
           </div>
@@ -227,7 +242,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({ visible, onClose, workflo
 
         {/* Frequency Selection */}
         <Form.Item
-          label={<Text strong>Scan Frequency</Text>}
+          label={<Text strong style={{ color: colors.titleText }}>Scan Frequency</Text>}
           name="frequency"
         >
           <Select
@@ -266,10 +281,10 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({ visible, onClose, workflo
 
         {/* Time Picker */}
         <Form.Item
-          label={<Text strong>Scan Time</Text>}
+          label={<Text strong style={{ color: colors.titleText }}>Scan Time</Text>}
           name="time"
           extra={
-            <Text type="secondary" style={{ fontSize: '12px', color: '#595959' }}>
+            <Text style={{ fontSize: '12px', color: colors.mutedText }}>
               {enabled ? `Next scan: ${getNextScanTime()}` : 'Enable scheduling to set scan time'}
             </Text>
           }
@@ -288,7 +303,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({ visible, onClose, workflo
 
         {/* Scope Selection */}
         <Form.Item
-          label={<Text strong>Scan Scope</Text>}
+          label={<Text strong style={{ color: colors.titleText }}>Scan Scope</Text>}
           name="scope"
         >
           <Radio.Group
@@ -299,11 +314,11 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({ visible, onClose, workflo
             <Space direction="vertical" style={{ width: '100%' }}>
               <Radio value="all">
                 <Space>
-                  <ThunderboltOutlined />
+                  <ThunderboltOutlined style={{ color: colors.titleText }} />
                   <div>
-                    <Text strong>All Workflows</Text>
+                    <Text strong style={{ color: colors.titleText }}>All Workflows</Text>
                     <br />
-                    <Text type="secondary" style={{ fontSize: '12px', color: '#595959' }}>
+                    <Text style={{ fontSize: '12px', color: colors.mutedText }}>
                       Scan all {workflows.length} workflows in your account
                     </Text>
                   </div>
@@ -311,11 +326,11 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({ visible, onClose, workflo
               </Radio>
               <Radio value="active">
                 <Space>
-                  <CheckCircleOutlined />
+                  <CheckCircleOutlined style={{ color: colors.titleText }} />
                   <div>
-                    <Text strong>Active Workflows Only</Text>
+                    <Text strong style={{ color: colors.titleText }}>Active Workflows Only</Text>
                     <br />
-                    <Text type="secondary" style={{ fontSize: '12px', color: '#595959' }}>
+                    <Text style={{ fontSize: '12px', color: colors.mutedText }}>
                       Only scan workflows with "active" status (
                       {workflows.filter(w => w.status === 'active').length} workflows)
                     </Text>
@@ -324,11 +339,11 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({ visible, onClose, workflo
               </Radio>
               <Radio value="selected">
                 <Space>
-                  <CheckCircleOutlined />
+                  <CheckCircleOutlined style={{ color: colors.titleText }} />
                   <div>
-                    <Text strong>Selected Workflows</Text>
+                    <Text strong style={{ color: colors.titleText }}>Selected Workflows</Text>
                     <br />
-                    <Text type="secondary" style={{ fontSize: '12px', color: '#595959' }}>
+                    <Text style={{ fontSize: '12px', color: colors.mutedText }}>
                       Choose specific workflows to scan ({selectedWorkflows.length} selected)
                     </Text>
                   </div>
@@ -343,12 +358,12 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({ visible, onClose, workflo
           <div style={{
             maxHeight: '300px',
             overflowY: 'auto',
-            border: '1px solid #d9d9d9',
+            border: `1px solid ${colors.border}`,
             borderRadius: '8px',
             padding: '12px',
-            background: '#fafafa'
+            background: colors.listBg
           }}>
-            <Text strong style={{ display: 'block', marginBottom: '12px' }}>
+            <Text strong style={{ display: 'block', marginBottom: '12px', color: colors.titleText }}>
               Select Workflows to Scan:
             </Text>
             <List
@@ -358,7 +373,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({ visible, onClose, workflo
                   style={{
                     padding: '8px',
                     cursor: 'pointer',
-                    background: selectedWorkflows.includes(workflow.id) ? '#e6f7ff' : 'transparent',
+                    background: selectedWorkflows.includes(workflow.id) ? colors.listHover : 'transparent',
                     borderRadius: '4px',
                     marginBottom: '4px'
                   }}
@@ -377,14 +392,14 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({ visible, onClose, workflo
                     }
                     title={
                       <Space>
-                        <Text strong>{workflow.name}</Text>
+                        <Text strong style={{ color: colors.titleText }}>{workflow.name}</Text>
                         <Tag color={workflow.status === 'active' ? 'success' : 'default'}>
                           {workflow.status}
                         </Tag>
                       </Space>
                     }
                     description={
-                      <Text type="secondary" style={{ fontSize: '12px', color: '#595959' }}>
+                      <Text style={{ fontSize: '12px', color: colors.mutedText }}>
                         {workflow.category || 'Uncategorized'}
                       </Text>
                     }
