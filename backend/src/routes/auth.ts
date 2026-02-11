@@ -484,14 +484,14 @@ authRouter.post('/refresh', asyncHandler(async (req: any, res: any) => {
 }));
 
 // ============================================================================
-// GHL OAUTH ROUTES (Existing)
+// OAUTH ROUTES (for connecting to GoHighLevel)
 // ============================================================================
 
 /**
- * GET /auth/ghl/login
- * Redirect to GHL OAuth (must be logged in first)
+ * GET /auth/oauth/login
+ * Redirect to OAuth (must be logged in first)
  */
-authRouter.get('/ghl/login', requireAuth, (_req, res) => {
+authRouter.get('/oauth/login', requireAuth, (_req, res) => {
   const clientId = process.env.GHL_CLIENT_ID;
   const redirectUri = process.env.REDIRECT_URI;
   
@@ -509,10 +509,10 @@ authRouter.get('/ghl/login', requireAuth, (_req, res) => {
 });
 
 /**
- * GET /auth/ghl/callback
- * OAuth callback handler - links GHL account to user
+ * GET /auth/oauth/callback
+ * OAuth callback handler - links account to user
  */
-authRouter.get('/ghl/callback', asyncHandler(async (req: any, res: any) => {
+authRouter.get('/oauth/callback', asyncHandler(async (req: any, res: any) => {
   const { code, state } = req.query;
   
   if (!code || typeof code !== 'string') {

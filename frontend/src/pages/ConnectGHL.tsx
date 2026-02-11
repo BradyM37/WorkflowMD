@@ -29,7 +29,7 @@ const ConnectGHL: React.FC = () => {
     // Redirect to backend OAuth endpoint which handles GHL redirect
     // Use axios baseURL to get the API server address
     const backendUrl = api.defaults.baseURL || 'https://ghlworkflowdebugger.onrender.com';
-    window.location.href = `${backendUrl}/auth/ghl/login`;
+    window.location.href = `${backendUrl}/auth/oauth/login`;
   };
 
   const handleSkipForDemo = () => {
