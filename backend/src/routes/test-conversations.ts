@@ -32,7 +32,13 @@ testConvRouter.get(
     console.log('Sample conversation:', JSON.stringify(conversations[0], null, 2));
     
     // Step 2: Get messages from first conversation
-    let messagesData = null;
+    let messagesData: {
+      count: number;
+      sample: any;
+      hasDateAdded: boolean;
+      hasDirection: boolean;
+      allMessages: any[];
+    } | null = null;
     if (conversations.length > 0) {
       const messages = await getConversationMessages(conversations[0].id, locationId, { limit: 10 });
       console.log('Messages found:', messages.length);

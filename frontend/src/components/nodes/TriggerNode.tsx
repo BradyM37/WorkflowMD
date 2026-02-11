@@ -22,18 +22,19 @@ const TriggerNode: React.FC<NodeProps<TriggerNodeData>> = ({ data }) => {
   const getSeverityStyle = (severity?: 'high' | 'medium' | 'low') => {
     if (!severity) return {};
     
+    // Using Ant Design standard colors
     const styles = {
       high: {
-        borderColor: '#dc2626',
-        boxShadow: '0 0 0 2px rgba(220, 38, 38, 0.3)',
+        borderColor: '#ff4d4f',
+        boxShadow: '0 0 0 2px rgba(255, 77, 79, 0.3)',
       },
       medium: {
-        borderColor: '#f59e0b',
-        boxShadow: '0 0 0 2px rgba(245, 158, 11, 0.3)',
+        borderColor: '#faad14',
+        boxShadow: '0 0 0 2px rgba(250, 173, 20, 0.3)',
       },
       low: {
-        borderColor: '#3b82f6',
-        boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.3)',
+        borderColor: '#1890ff',
+        boxShadow: '0 0 0 2px rgba(24, 144, 255, 0.3)',
       },
     };
     
@@ -54,8 +55,8 @@ const TriggerNode: React.FC<NodeProps<TriggerNodeData>> = ({ data }) => {
         <div 
           className="conflict-indicator"
           style={{
-            background: conflictDetails.severity === 'high' ? '#dc2626' : 
-                       conflictDetails.severity === 'medium' ? '#f59e0b' : '#3b82f6',
+            background: conflictDetails.severity === 'high' ? '#ff4d4f' : 
+                       conflictDetails.severity === 'medium' ? '#faad14' : '#1890ff',
           }}
         >
           -{conflictDetails.pointsDeducted}

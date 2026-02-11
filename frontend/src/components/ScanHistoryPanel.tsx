@@ -11,7 +11,8 @@ import {
   Col,
   Statistic,
   Avatar,
-  Badge
+  Badge,
+  Tooltip
 } from 'antd';
 import {
   HistoryOutlined,
@@ -188,9 +189,11 @@ const ScanHistoryPanel: React.FC<ScanHistoryPanelProps> = ({ history, onClearHis
         }
         extra={
           onClearHistory && (
-            <Button danger onClick={onClearHistory} size="small">
-              Clear History
-            </Button>
+            <Tooltip title="Remove all scan history">
+              <Button danger onClick={onClearHistory} size="small">
+                Clear History
+              </Button>
+            </Tooltip>
           )
         }
       >

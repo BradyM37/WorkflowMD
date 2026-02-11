@@ -273,7 +273,7 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({
             </div>
 
             {/* Tags */}
-            <Space size={4}>
+            <Space size={4} wrap>
               {getSeverityTag(insight.severity)}
               <Tag icon={getCategoryIcon(insight.category)}>
                 {insight.category.charAt(0).toUpperCase() + insight.category.slice(1)}
@@ -426,7 +426,7 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({
       <Collapse
         defaultActiveKey={defaultExpanded ? ['insights'] : []}
         expandIconPosition="start"
-        style={{ marginBottom: 16 }}
+        style={{ marginBottom: 24 }}
         className="insights-collapse"
       >
         <Panel

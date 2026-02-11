@@ -3,17 +3,14 @@
  * Controls access to premium features based on subscription plan
  */
 
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { pool } from '../lib/database';
 import { logger } from '../lib/logger';
 
 export type PlanType = 'free' | 'pro' | 'agency';
 
-interface AuthenticatedRequest {
-  userId?: string;
-  locationId?: string;
-  planType?: PlanType;
-}
+// AuthenticatedRequest type is now globally extended via src/types/express.d.ts
+export type AuthenticatedRequest = Request;
 
 /**
  * Get plan type from database for a location
@@ -208,7 +205,8 @@ export function hasFeature(planType: PlanType, feature: keyof typeof PLAN_LIMITS
     return value;
   }
   if (typeof value === 'number') {
-    return value !== 0;
+    // -1 means unlimited, positive values are limits
+    return value === -1 || value > 0;
   }
   return false;
 }

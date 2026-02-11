@@ -21,21 +21,22 @@ const ActionNode: React.FC<NodeProps<ActionNodeData>> = ({ data }) => {
   const getSeverityStyle = (severity?: 'high' | 'medium' | 'low') => {
     if (!severity) return {};
     
+    // Using Ant Design standard colors
     const styles = {
       high: {
-        borderColor: '#dc2626',
-        boxShadow: '0 0 0 2px rgba(220, 38, 38, 0.3)',
-        background: 'rgba(220, 38, 38, 0.05)',
+        borderColor: '#ff4d4f',
+        boxShadow: '0 0 0 2px rgba(255, 77, 79, 0.3)',
+        background: 'rgba(255, 77, 79, 0.05)',
       },
       medium: {
-        borderColor: '#f59e0b',
-        boxShadow: '0 0 0 2px rgba(245, 158, 11, 0.3)',
-        background: 'rgba(245, 158, 11, 0.05)',
+        borderColor: '#faad14',
+        boxShadow: '0 0 0 2px rgba(250, 173, 20, 0.3)',
+        background: 'rgba(250, 173, 20, 0.05)',
       },
       low: {
-        borderColor: '#3b82f6',
-        boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.3)',
-        background: 'rgba(59, 130, 246, 0.05)',
+        borderColor: '#1890ff',
+        boxShadow: '0 0 0 2px rgba(24, 144, 255, 0.3)',
+        background: 'rgba(24, 144, 255, 0.05)',
       },
     };
     
@@ -56,8 +57,8 @@ const ActionNode: React.FC<NodeProps<ActionNodeData>> = ({ data }) => {
         <div 
           className="issue-indicator" 
           style={{
-            background: issueDetails.severity === 'high' ? '#dc2626' : 
-                       issueDetails.severity === 'medium' ? '#f59e0b' : '#3b82f6',
+            background: issueDetails.severity === 'high' ? '#ff4d4f' : 
+                       issueDetails.severity === 'medium' ? '#faad14' : '#1890ff',
           }}
         >
           -{issueDetails.pointsDeducted}

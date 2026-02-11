@@ -125,10 +125,10 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({ days }) => {
   const { goal, progress, today } = goalData.data;
 
   const getProgressColor = (percentage: number): string => {
-    if (percentage >= 90) return '#52c41a';
-    if (percentage >= 70) return '#faad14';
-    if (percentage >= 50) return '#ff7a45';
-    return '#ff4d4f';
+    if (percentage >= 90) return '#52c41a';  // Success green
+    if (percentage >= 70) return '#faad14';  // Warning yellow
+    if (percentage >= 50) return '#fa8c16';  // Orange
+    return '#ff4d4f';                        // Error red
   };
 
   const getProgressEmoji = (percentage: number): string => {
@@ -289,7 +289,7 @@ const GoalProgressCard: React.FC<GoalProgressCardProps> = ({ days }) => {
                         : day.percentage >= 70 
                         ? '#faad14' 
                         : day.percentage >= 50
-                        ? '#ff7a45'
+                        ? '#fa8c16'
                         : day.percentage > 0
                         ? '#ff4d4f'
                         : '#f0f0f0',

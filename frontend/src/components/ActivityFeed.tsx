@@ -91,11 +91,11 @@ const formatTimeAgo = (timestamp: string): string => {
 };
 
 const getResponseQualityColor = (seconds: number | null): string => {
-  if (seconds === null) return '#ff4d4f';
-  if (seconds < 60) return '#52c41a';
-  if (seconds < 300) return '#73d13d';
-  if (seconds < 900) return '#faad14';
-  return '#ff7a45';
+  if (seconds === null) return '#ff4d4f';  // Error red
+  if (seconds < 60) return '#52c41a';      // Success green
+  if (seconds < 300) return '#73d13d';     // Light green
+  if (seconds < 900) return '#faad14';     // Warning yellow
+  return '#fa8c16';                        // Orange
 };
 
 const ActivityFeed: React.FC<ActivityFeedProps> = ({ 

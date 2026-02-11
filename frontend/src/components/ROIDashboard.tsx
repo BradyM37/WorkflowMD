@@ -131,7 +131,8 @@ interface ROICalculation {
   recommendation: string;
 }
 
-const FUNNEL_COLORS = ['#52c41a', '#73d13d', '#faad14', '#ff7a45', '#ff4d4f', '#8c8c8c'];
+// Using Ant Design standard colors
+const FUNNEL_COLORS = ['#52c41a', '#73d13d', '#faad14', '#fa8c16', '#ff4d4f', '#8c8c8c'];
 
 const ROIDashboard: React.FC<{ days?: number }> = ({ days = 30 }) => {
   const { isDarkMode } = useTheme();
@@ -205,7 +206,7 @@ const ROIDashboard: React.FC<{ days?: number }> = ({ days = 30 }) => {
         style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           border: 'none',
-          marginBottom: 16
+          marginBottom: 24
         }}
       >
         <Row gutter={[24, 24]} align="middle">
@@ -256,7 +257,7 @@ const ROIDashboard: React.FC<{ days?: number }> = ({ days = 30 }) => {
       </Card>
 
       {/* Quick Stats Row */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={8}>
           <Card hoverable className="stat-card">
             <Statistic
@@ -506,7 +507,7 @@ const ROIDashboard: React.FC<{ days?: number }> = ({ days = 30 }) => {
       <Card 
         className="cta-card"
         style={{ 
-          marginTop: 16,
+          marginTop: 24,
           background: isDarkMode 
             ? 'linear-gradient(135deg, #1f1f1f 0%, #2d2d2d 100%)'
             : 'linear-gradient(135deg, #f6f9fc 0%, #e9ecef 100%)',

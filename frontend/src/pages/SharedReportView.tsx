@@ -116,7 +116,7 @@ const SharedReportView: React.FC = () => {
     ['shared-report', token],
     async () => {
       const response = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/reports/share/${token}`
+        `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/reports/share/${token}`
       );
       return response.data.data;
     },
@@ -163,7 +163,7 @@ const SharedReportView: React.FC = () => {
 
   const downloadPDF = () => {
     window.open(
-      `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/reports/share/${token}/pdf`,
+      `${process.env.REACT_APP_API_URL || 'http://localhost:3000'}/api/reports/share/${token}/pdf`,
       '_blank'
     );
   };
