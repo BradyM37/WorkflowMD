@@ -680,4 +680,623 @@ metricsRouter.get(
   })
 );
 
+/**
+ * GET /api/metrics/insights
+ * Get AI-powered insights and recommendations
+ */
+metricsRouter.get(
+  '/insights',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const days = parseInt(req.query.days as string) || 30;
+    
+    logger.info('Generating insights', { locationId, days, requestId: req.id });
+    
+    // Get all insights
+    const allInsights = await generateInsights(locationId, days);
+    
+    // Filter out dismissed insights
+    const dismissedIds = await getDismissedInsights(locationId);
+    const insights = allInsights.filter(i => !dismissedIds.includes(i.id));
+    
+    // Group by severity for easy frontend rendering
+    const grouped = {
+      critical: insights.filter(i => i.severity === 'critical'),
+      warning: insights.filter(i => i.severity === 'warning'),
+      opportunity: insights.filter(i => i.severity === 'opportunity'),
+      info: insights.filter(i => i.severity === 'info')
+    };
+    
+    return ApiResponse.success(res, {
+      insights,
+      grouped,
+      total: insights.length,
+      period: { days }
+    });
+  })
+);
+
+/**
+ * POST /api/metrics/insights/:id/dismiss
+ * Dismiss an insight (hide for 7 days)
+ */
+metricsRouter.post(
+  '/insights/:id/dismiss',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const insightId = req.params.id;
+    
+    logger.info('Dismissing insight', { locationId, insightId, requestId: req.id });
+    
+    await dismissInsight(locationId, insightId);
+    
+    return ApiResponse.success(res, { 
+      message: 'Insight dismissed',
+      insightId 
+    });
+  })
+);
+
+/**
+ * POST /api/metrics/insights/:id/addressed
+ * Mark an insight as addressed
+ */
+metricsRouter.post(
+  '/insights/:id/addressed',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const insightId = req.params.id;
+    
+    logger.info('Marking insight as addressed', { locationId, insightId, requestId: req.id });
+    
+    await markInsightAddressed(locationId, insightId);
+    
+    return ApiResponse.success(res, { 
+      message: 'Insight marked as addressed',
+      insightId 
+    });
+  })
+);
+
+/**
+ * GET /api/metrics/sla
+ * Get SLA compliance metrics
+ */
+metricsRouter.get(
+  '/sla',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const days = parseInt(req.query.days as string) || 7;
+    const targetSeconds = parseInt(req.query.target as string) || 300; // Default 5 minutes
+    
+    logger.info('Fetching SLA metrics', { locationId, days, targetSeconds, requestId: req.id });
+    
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    const result = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE response_time_seconds IS NOT NULL AND response_time_seconds <= $3) as met_sla,
+        COUNT(*) FILTER (WHERE response_time_seconds IS NOT NULL AND response_time_seconds > $3) as missed_sla,
+        COUNT(*) FILTER (WHERE response_time_seconds IS NULL OR is_missed = true) as no_response
+      FROM conversations
+      WHERE location_id = $1 
+        AND first_inbound_at >= $2
+        AND first_inbound_at IS NOT NULL
+    `, [locationId, startDate, targetSeconds]);
+    
+    const stats = result.rows[0] || {};
+    const total = parseInt(stats.total) || 0;
+    const metSla = parseInt(stats.met_sla) || 0;
+    const missedSla = parseInt(stats.missed_sla) || 0;
+    const noResponse = parseInt(stats.no_response) || 0;
+    
+    const complianceRate = total > 0 
+      ? Math.round((metSla / (total - noResponse)) * 100) || 0
+      : 0;
+    
+    // Format target for display
+    const formatTime = (seconds: number): string => {
+      if (seconds < 60) return `${seconds} seconds`;
+      if (seconds === 60) return '1 minute';
+      if (seconds < 3600) return `${Math.round(seconds / 60)} minutes`;
+      return `${(seconds / 3600).toFixed(1)} hours`;
+    };
+    
+    return ApiResponse.success(res, {
+      target: {
+        seconds: targetSeconds,
+        formatted: formatTime(targetSeconds)
+      },
+      metrics: {
+        total,
+        metSla,
+        missedSla,
+        noResponse,
+        complianceRate
+      },
+      period: { days }
+    });
+  })
+);
+
+/**
+ * GET /api/metrics/heatmap
+ * Get hourly response time heatmap data
+ */
+metricsRouter.get(
+  '/heatmap',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const days = parseInt(req.query.days as string) || 30;
+    
+    logger.info('Fetching heatmap data', { locationId, days, requestId: req.id });
+    
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    const result = await pool.query(`
+      SELECT 
+        EXTRACT(DOW FROM first_inbound_at) as day_of_week,
+        EXTRACT(HOUR FROM first_inbound_at) as hour,
+        AVG(response_time_seconds)::INTEGER as avg_response_time,
+        COUNT(*) as volume
+      FROM conversations
+      WHERE location_id = $1 
+        AND first_inbound_at >= $2
+        AND first_inbound_at IS NOT NULL
+        AND response_time_seconds IS NOT NULL
+      GROUP BY 
+        EXTRACT(DOW FROM first_inbound_at),
+        EXTRACT(HOUR FROM first_inbound_at)
+      ORDER BY day_of_week, hour
+    `, [locationId, startDate]);
+    
+    const heatmap = result.rows.map(row => ({
+      dayOfWeek: parseInt(row.day_of_week),
+      hour: parseInt(row.hour),
+      avgResponseTime: row.avg_response_time || 0,
+      volume: parseInt(row.volume) || 0
+    }));
+    
+    return ApiResponse.success(res, { heatmap, period: { days } });
+  })
+);
+
+/**
+ * GET /api/metrics/export
+ * Export metrics as CSV
+ */
+metricsRouter.get(
+  '/export',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const days = parseInt(req.query.days as string) || 30;
+    
+    logger.info('Exporting metrics CSV', { locationId, days, requestId: req.id });
+    
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    const result = await pool.query(`
+      SELECT 
+        contact_name,
+        contact_email,
+        contact_phone,
+        channel,
+        first_inbound_at,
+        first_response_at,
+        response_time_seconds,
+        is_missed,
+        assigned_user_name
+      FROM conversations
+      WHERE location_id = $1 
+        AND first_inbound_at >= $2
+        AND first_inbound_at IS NOT NULL
+      ORDER BY first_inbound_at DESC
+    `, [locationId, startDate]);
+    
+    // Build CSV
+    const headers = [
+      'Contact Name',
+      'Email',
+      'Phone',
+      'Channel',
+      'First Inbound',
+      'First Response',
+      'Response Time (seconds)',
+      'Missed',
+      'Assigned To'
+    ];
+    
+    const rows = result.rows.map(row => [
+      row.contact_name || '',
+      row.contact_email || '',
+      row.contact_phone || '',
+      row.channel || '',
+      row.first_inbound_at ? new Date(row.first_inbound_at).toISOString() : '',
+      row.first_response_at ? new Date(row.first_response_at).toISOString() : '',
+      row.response_time_seconds || '',
+      row.is_missed ? 'Yes' : 'No',
+      row.assigned_user_name || ''
+    ]);
+    
+    const csv = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="response-metrics-${days}days.csv"`);
+    res.send(csv);
+  })
+);
+
+/**
+ * ============================================================
+ * REVENUE ATTRIBUTION & ROI TRACKING - THE KILLER FEATURE
+ * Connect response time to actual business outcomes
+ * Show users the MONEY, not just metrics
+ * ============================================================
+ */
+
+import {
+  getRevenueMetrics,
+  calculateROI,
+  getBenchmarks,
+  updateBenchmarks,
+  linkConversationToOpportunity
+} from '../lib/revenue-analyzer';
+
+/**
+ * GET /api/metrics/revenue
+ * Get comprehensive revenue attribution metrics
+ * THE HEADLINE ENDPOINT - Shows the money impact
+ */
+metricsRouter.get(
+  '/revenue',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const days = parseInt(req.query.days as string) || 30;
+    
+    logger.info('Fetching revenue metrics', { locationId, days, requestId: req.id });
+    
+    const metrics = await getRevenueMetrics(locationId, days);
+    
+    return ApiResponse.success(res, {
+      ...metrics,
+      period: { days, startDate: new Date(Date.now() - days * 24 * 60 * 60 * 1000) },
+      headline: {
+        // The money headlines for the dashboard
+        moneyFromSpeed: `$${metrics.revenueFromFastResponses.toLocaleString()}`,
+        moneyLostSlow: `$${metrics.estimatedLostFromSlow.toLocaleString()}`,
+        moneyLostMissed: `$${metrics.estimatedLostFromMissed.toLocaleString()}`,
+        totalOpportunityCost: `$${metrics.totalPotentialLost.toLocaleString()}`,
+        potentialGain: `$${metrics.roiProjection.potentialGain.toLocaleString()}`
+      }
+    });
+  })
+);
+
+/**
+ * GET /api/metrics/revenue/roi-calculator
+ * Calculate ROI for a specific improvement scenario
+ * "If you improve to 3-min avg, you'd gain $X"
+ */
+metricsRouter.get(
+  '/revenue/roi-calculator',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const currentAvgMinutes = parseFloat(req.query.currentAvg as string) || 10;
+    const targetAvgMinutes = parseFloat(req.query.targetAvg as string) || 3;
+    const monthlyLeads = parseInt(req.query.monthlyLeads as string) || 100;
+    
+    logger.info('Calculating ROI', { 
+      locationId, 
+      currentAvgMinutes, 
+      targetAvgMinutes, 
+      monthlyLeads,
+      requestId: req.id 
+    });
+    
+    const roi = await calculateROI(
+      locationId,
+      currentAvgMinutes,
+      targetAvgMinutes,
+      monthlyLeads
+    );
+    
+    return ApiResponse.success(res, {
+      scenario: {
+        currentAvgMinutes,
+        targetAvgMinutes,
+        monthlyLeads,
+        improvementMinutes: currentAvgMinutes - targetAvgMinutes
+      },
+      roi,
+      recommendation: roi.additionalRevenue > 100 
+        ? `Improving from ${currentAvgMinutes}min to ${targetAvgMinutes}min average would generate an additional $${roi.additionalRevenue.toLocaleString()}/month - a ${roi.roi}% ROI on your subscription!`
+        : `Consider increasing lead volume or improving response speed further for better ROI.`
+    });
+  })
+);
+
+/**
+ * GET /api/metrics/revenue/benchmarks
+ * Get current revenue benchmarks/settings for the location
+ */
+metricsRouter.get(
+  '/revenue/benchmarks',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    
+    logger.info('Fetching revenue benchmarks', { locationId, requestId: req.id });
+    
+    const benchmarks = await getBenchmarks(locationId);
+    
+    return ApiResponse.success(res, {
+      benchmarks,
+      description: {
+        conversionRates: 'Expected conversion rates by response time bucket (based on industry research)',
+        avgDealValues: 'Average deal values by lead source',
+        customAvgDealValue: 'Your custom average deal value (if set)',
+        useCustomDealValue: 'Whether to use your custom deal value for calculations'
+      }
+    });
+  })
+);
+
+/**
+ * PUT /api/metrics/revenue/benchmarks
+ * Update revenue benchmarks/settings
+ * Allows users to customize their average deal value
+ */
+metricsRouter.put(
+  '/revenue/benchmarks',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const updates = req.body;
+    
+    logger.info('Updating revenue benchmarks', { 
+      locationId, 
+      updates,
+      requestId: req.id 
+    });
+    
+    // Validate updates
+    if (updates.customAvgDealValue !== undefined) {
+      const value = parseFloat(updates.customAvgDealValue);
+      if (isNaN(value) || value < 0 || value > 1000000) {
+        return ApiResponse.error(res, 'Invalid deal value. Must be between 0 and 1,000,000', 400);
+      }
+      updates.customAvgDealValue = value;
+    }
+    
+    await updateBenchmarks(locationId, updates);
+    
+    // Return updated benchmarks
+    const benchmarks = await getBenchmarks(locationId);
+    
+    return ApiResponse.success(res, {
+      message: 'Benchmarks updated successfully',
+      benchmarks
+    });
+  })
+);
+
+/**
+ * POST /api/metrics/revenue/link-opportunity
+ * Link a conversation to an opportunity/deal for accurate tracking
+ */
+metricsRouter.post(
+  '/revenue/link-opportunity',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const { 
+      conversationId, 
+      opportunityId, 
+      pipelineId,
+      pipelineStage,
+      dealValue, 
+      dealStatus,
+      leadSource 
+    } = req.body;
+    
+    if (!conversationId || !opportunityId) {
+      return ApiResponse.error(res, 'conversationId and opportunityId are required', 400);
+    }
+    
+    if (!dealValue || isNaN(parseFloat(dealValue))) {
+      return ApiResponse.error(res, 'Valid dealValue is required', 400);
+    }
+    
+    const validStatuses = ['open', 'won', 'lost', 'abandoned'];
+    if (!dealStatus || !validStatuses.includes(dealStatus)) {
+      return ApiResponse.error(res, `dealStatus must be one of: ${validStatuses.join(', ')}`, 400);
+    }
+    
+    logger.info('Linking conversation to opportunity', { 
+      locationId, 
+      conversationId,
+      opportunityId,
+      dealValue,
+      dealStatus,
+      requestId: req.id 
+    });
+    
+    await linkConversationToOpportunity(conversationId, locationId, {
+      opportunityId,
+      pipelineId,
+      pipelineStage,
+      dealValue: parseFloat(dealValue),
+      dealStatus,
+      leadSource
+    });
+    
+    return ApiResponse.success(res, {
+      message: 'Conversation linked to opportunity successfully',
+      conversationId,
+      opportunityId,
+      dealValue,
+      dealStatus
+    });
+  })
+);
+
+/**
+ * GET /api/metrics/revenue/summary
+ * Quick summary for dashboard cards
+ */
+metricsRouter.get(
+  '/revenue/summary',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const days = parseInt(req.query.days as string) || 30;
+    
+    logger.info('Fetching revenue summary', { locationId, days, requestId: req.id });
+    
+    const metrics = await getRevenueMetrics(locationId, days);
+    
+    // Build compelling summary for the dashboard
+    const summary = {
+      // Hero stat
+      fastResponsesGenerated: {
+        value: metrics.revenueFromFastResponses,
+        formatted: `$${metrics.revenueFromFastResponses.toLocaleString()}`,
+        label: 'Revenue from fast responses',
+        subtext: 'Responses under 5 minutes that converted'
+      },
+      
+      // Pain point
+      potentialLost: {
+        value: metrics.totalPotentialLost,
+        formatted: `$${metrics.totalPotentialLost.toLocaleString()}`,
+        label: 'Estimated lost revenue',
+        subtext: `${metrics.conversionByBucket.find(b => b.bucket === 'missed')?.leads || 0} missed + slow responses`
+      },
+      
+      // The opportunity
+      improvementGain: {
+        value: metrics.roiProjection.potentialGain,
+        formatted: `$${metrics.roiProjection.potentialGain.toLocaleString()}`,
+        label: 'Potential monthly gain',
+        subtext: 'If you improved to 3-min average'
+      },
+      
+      // Speed impact
+      speedMultiplier: {
+        value: metrics.insights.speedImpactMultiplier,
+        formatted: `${metrics.insights.speedImpactMultiplier}x`,
+        label: 'Speed advantage',
+        subtext: 'Fast responders convert more'
+      },
+      
+      // Per-missed-lead cost
+      missedLeadCost: {
+        value: metrics.insights.missedLeadCost,
+        formatted: `$${Math.round(metrics.insights.missedLeadCost).toLocaleString()}`,
+        label: 'Cost per missed lead',
+        subtext: 'Average opportunity cost'
+      },
+      
+      // ROI justification
+      valuePerMinute: {
+        value: metrics.insights.valuePerMinuteImprovement,
+        formatted: `$${Math.round(metrics.insights.valuePerMinuteImprovement).toLocaleString()}`,
+        label: 'Value per minute faster',
+        subtext: 'Monthly gain per minute improved'
+      }
+    };
+    
+    return ApiResponse.success(res, {
+      summary,
+      conversionFunnel: metrics.conversionByBucket.map(b => ({
+        bucket: b.label,
+        leads: b.leads,
+        conversions: b.conversions,
+        conversionRate: `${b.conversionRate}%`,
+        benchmarkRate: `${b.benchmarkRate}%`,
+        revenue: `$${b.revenue.toLocaleString()}`,
+        lost: `$${b.estimatedLost.toLocaleString()}`
+      })),
+      period: { days }
+    });
+  })
+);
+
+/**
+ * GET /api/metrics/revenue/trend
+ * Revenue trend over time
+ */
+metricsRouter.get(
+  '/revenue/trend',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const days = parseInt(req.query.days as string) || 30;
+    
+    logger.info('Fetching revenue trend', { locationId, days, requestId: req.id });
+    
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    const result = await pool.query(`
+      SELECT 
+        date,
+        actual_revenue_won,
+        revenue_from_fast_responses,
+        estimated_lost_from_slow,
+        estimated_lost_from_missed,
+        revenue_gap,
+        actual_deals_won,
+        leads_under_1min + leads_1_5min as fast_leads,
+        leads_5_15min + leads_15_60min + leads_over_1hr as slow_leads,
+        leads_missed as missed_leads
+      FROM daily_revenue_metrics
+      WHERE location_id = $1 AND date >= $2
+      ORDER BY date ASC
+    `, [locationId, startDate]);
+    
+    const trend = result.rows.map(row => ({
+      date: row.date.toISOString().split('T')[0],
+      actualRevenue: parseFloat(row.actual_revenue_won) || 0,
+      fastResponseRevenue: parseFloat(row.revenue_from_fast_responses) || 0,
+      estimatedLost: (parseFloat(row.estimated_lost_from_slow) || 0) + (parseFloat(row.estimated_lost_from_missed) || 0),
+      revenueGap: parseFloat(row.revenue_gap) || 0,
+      dealsWon: parseInt(row.actual_deals_won) || 0,
+      fastLeads: parseInt(row.fast_leads) || 0,
+      slowLeads: parseInt(row.slow_leads) || 0,
+      missedLeads: parseInt(row.missed_leads) || 0
+    }));
+    
+    return ApiResponse.success(res, { trend, period: { days } });
+  })
+);
+
 export default metricsRouter;

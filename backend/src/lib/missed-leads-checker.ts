@@ -1,11 +1,12 @@
 /**
  * Missed Leads Checker
  * Periodically checks for conversations that haven't been responded to
- * and marks them as missed
+ * and marks them as missed. Also triggers Slack alerts for waiting leads.
  */
 
 import { pool } from './database';
 import { logger } from './logger';
+import { checkAndAlertWaitingLeads } from './slack-alerts';
 
 const MISSED_THRESHOLD_SECONDS = 3600; // 1 hour
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // Check every 5 minutes
@@ -13,10 +14,28 @@ const CHECK_INTERVAL_MS = 5 * 60 * 1000; // Check every 5 minutes
 let checkInterval: NodeJS.Timer | null = null;
 
 /**
+ * Get all active locations that have conversations
+ */
+async function getActiveLocations(): Promise<string[]> {
+  try {
+    const result = await pool.query(`
+      SELECT DISTINCT location_id 
+      FROM oauth_tokens 
+      WHERE subscription_status IN ('active', 'trialing', 'free')
+    `);
+    return result.rows.map(r => r.location_id);
+  } catch (error) {
+    logger.error('Failed to get active locations', {}, error as Error);
+    return [];
+  }
+}
+
+/**
  * Mark conversations as missed if no response after threshold
  */
 async function checkForMissedLeads(): Promise<void> {
   try {
+    // First, mark conversations as missed
     const result = await pool.query(`
       UPDATE conversations
       SET is_missed = true, updated_at = NOW()
@@ -36,10 +55,25 @@ async function checkForMissedLeads(): Promise<void> {
           contactName: r.contact_name
         }))
       });
-      
-      // TODO: Send alert notifications here
-      // Could integrate with email service to notify users of missed leads
     }
+
+    // Then check for Slack alerts across all active locations
+    const locations = await getActiveLocations();
+    let totalAlertsSent = 0;
+
+    for (const locationId of locations) {
+      try {
+        const alertsSent = await checkAndAlertWaitingLeads(locationId);
+        totalAlertsSent += alertsSent;
+      } catch (error) {
+        logger.error('Failed to check Slack alerts for location', { locationId }, error as Error);
+      }
+    }
+
+    if (totalAlertsSent > 0) {
+      logger.info('Total Slack alerts sent', { count: totalAlertsSent });
+    }
+
   } catch (error) {
     logger.error('Failed to check for missed leads', {}, error as Error);
   }
@@ -86,4 +120,33 @@ export async function getMissedLeadsCount(locationId: string): Promise<number> {
     [locationId]
   );
   return parseInt(result.rows[0].count) || 0;
+}
+
+/**
+ * Manual trigger to check and alert for a specific location
+ * Useful for testing or on-demand checks
+ */
+export async function triggerAlertsForLocation(locationId: string): Promise<{
+  missedMarked: number;
+  alertsSent: number;
+}> {
+  // Mark missed leads for this location
+  const missedResult = await pool.query(`
+    UPDATE conversations
+    SET is_missed = true, updated_at = NOW()
+    WHERE location_id = $1
+      AND first_inbound_at IS NOT NULL
+      AND first_response_at IS NULL
+      AND is_missed = false
+      AND first_inbound_at < NOW() - INTERVAL '${MISSED_THRESHOLD_SECONDS} seconds'
+    RETURNING id
+  `, [locationId]);
+
+  // Send Slack alerts
+  const alertsSent = await checkAndAlertWaitingLeads(locationId);
+
+  return {
+    missedMarked: missedResult.rowCount || 0,
+    alertsSent
+  };
 }

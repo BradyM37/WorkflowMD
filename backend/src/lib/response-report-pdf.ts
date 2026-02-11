@@ -1025,3 +1025,467 @@ function generateRecommendations(data: ReportData): Array<{ title: string; descr
 
   return recs.slice(0, 4);
 }
+
+// ============================================================================
+// WHITE-LABEL BRANDED PDF GENERATION
+// ============================================================================
+
+interface BrandingOptions {
+  companyName?: string | null;
+  logoUrl?: string | null;
+  primaryColor?: string;
+  secondaryColor?: string;
+  customFooterText?: string | null;
+  hidePoweredBy?: boolean;
+}
+
+/**
+ * Generate a white-labeled PDF report with agency branding
+ */
+export async function generateBrandedResponseReportPDF(
+  locationId: string, 
+  days: number,
+  branding: BrandingOptions
+): Promise<Buffer> {
+  const data = await fetchReportData(locationId, days);
+  
+  // Override colors with branding if provided
+  const brandedColors = {
+    ...COLORS,
+    primary: branding.primaryColor || COLORS.primary,
+    secondary: branding.secondaryColor || COLORS.secondary
+  };
+  
+  return new Promise((resolve, reject) => {
+    try {
+      const companyName = branding.companyName || data.locationName;
+      
+      const doc = new PDFDocument({
+        size: 'LETTER',
+        margins: { top: 50, bottom: 60, left: 50, right: 50 },
+        info: {
+          Title: `Response Time Report - ${companyName}`,
+          Author: branding.hidePoweredBy ? companyName : 'WorkflowMD Response Tracker',
+          Subject: 'Response Time Analytics',
+          CreationDate: new Date()
+        },
+        autoFirstPage: false
+      });
+
+      const chunks: Buffer[] = [];
+      doc.on('data', (chunk) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      const pageWidth = doc.page?.width || 612;
+      const contentWidth = pageWidth - 100;
+      
+      // Helper for branded footer
+      const addBrandedFooter = () => {
+        const pageNum = doc.bufferedPageRange().count;
+        let footerText = branding.customFooterText || 
+          (branding.hidePoweredBy ? companyName : 'WorkflowMD Response Tracker');
+        footerText += `  •  Page ${pageNum}  •  Generated ${new Date().toLocaleString()}`;
+        
+        doc.fontSize(8)
+           .fillColor(COLORS.textLight)
+           .font('Helvetica')
+           .text(footerText, 50, doc.page.height - 40, { width: pageWidth - 100, align: 'center' });
+      };
+      
+      // ========================================
+      // PAGE 1: EXECUTIVE SUMMARY (BRANDED)
+      // ========================================
+      doc.addPage();
+      let y = 0;
+
+      // Header with branded gradient background
+      doc.rect(0, 0, pageWidth, 130).fillColor(brandedColors.primary).fill();
+      
+      // Title
+      doc.fontSize(28)
+         .fillColor(COLORS.white)
+         .font('Helvetica-Bold')
+         .text('⚡ Response Time Report', 50, 35);
+      
+      // Company name
+      doc.fontSize(12)
+         .fillColor(COLORS.white)
+         .font('Helvetica')
+         .text(companyName, 50, 70);
+      
+      // Date range
+      const startStr = data.dateRange.start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const endStr = data.dateRange.end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      doc.text(`${startStr} - ${endStr} (${data.dateRange.days} days)`, 50, 88);
+      
+      // Generated date
+      doc.text(
+        `Generated: ${new Date().toLocaleDateString('en-US', { dateStyle: 'medium' })}`,
+        50, 106,
+        { width: contentWidth, align: 'right' }
+      );
+
+      y = 150;
+
+      // ========================================
+      // EXECUTIVE SUMMARY SECTION
+      // ========================================
+      
+      doc.fontSize(16)
+         .fillColor(COLORS.text)
+         .font('Helvetica-Bold')
+         .text('Executive Summary', 50, y);
+      y += 30;
+
+      // Main KPI boxes
+      const kpiWidth = (contentWidth - 30) / 3;
+      
+      // Avg Response Time box
+      doc.roundedRect(50, y, kpiWidth, 80, 8)
+         .fillColor(getGradeColor(data.metrics.speedGrade))
+         .fill();
+      
+      doc.fontSize(28)
+         .fillColor(COLORS.white)
+         .font('Helvetica-Bold')
+         .text(formatTime(data.metrics.avgResponseTime), 50, y + 15, { width: kpiWidth, align: 'center' });
+      
+      doc.fontSize(10)
+         .text('Avg Response Time', 50, y + 50, { width: kpiWidth, align: 'center' });
+      
+      doc.fontSize(9)
+         .text(`${data.metrics.speedGrade}`, 50, y + 62, { width: kpiWidth, align: 'center' });
+
+      // Response Rate box
+      const rateColor = data.metrics.responseRate >= 90 ? COLORS.excellent : 
+                        data.metrics.responseRate >= 70 ? COLORS.average : COLORS.critical;
+      doc.roundedRect(50 + kpiWidth + 15, y, kpiWidth, 80, 8)
+         .fillColor(rateColor)
+         .fill();
+      
+      doc.fontSize(28)
+         .fillColor(COLORS.white)
+         .font('Helvetica-Bold')
+         .text(`${data.metrics.responseRate}%`, 50 + kpiWidth + 15, y + 15, { width: kpiWidth, align: 'center' });
+      
+      doc.fontSize(10)
+         .text('Response Rate', 50 + kpiWidth + 15, y + 50, { width: kpiWidth, align: 'center' });
+      
+      doc.fontSize(9)
+         .text(`${data.metrics.respondedConversations}/${data.metrics.totalConversations} leads`, 50 + kpiWidth + 15, y + 62, { width: kpiWidth, align: 'center' });
+
+      // Missed Leads box
+      const missedColor = data.metrics.missedCount === 0 ? COLORS.excellent : COLORS.critical;
+      doc.roundedRect(50 + (kpiWidth + 15) * 2, y, kpiWidth, 80, 8)
+         .fillColor(missedColor)
+         .fill();
+      
+      doc.fontSize(28)
+         .fillColor(COLORS.white)
+         .font('Helvetica-Bold')
+         .text(data.metrics.missedCount.toString(), 50 + (kpiWidth + 15) * 2, y + 15, { width: kpiWidth, align: 'center' });
+      
+      doc.fontSize(10)
+         .text('Missed Leads', 50 + (kpiWidth + 15) * 2, y + 50, { width: kpiWidth, align: 'center' });
+      
+      doc.fontSize(9)
+         .text(data.metrics.missedCount === 0 ? 'All contacted!' : 'Need follow-up', 50 + (kpiWidth + 15) * 2, y + 62, { width: kpiWidth, align: 'center' });
+
+      y += 100;
+
+      // ========================================
+      // PERIOD COMPARISON
+      // ========================================
+      
+      doc.fontSize(14)
+         .fillColor(COLORS.text)
+         .font('Helvetica-Bold')
+         .text('📊 Period Comparison', 50, y);
+      y += 25;
+
+      doc.fontSize(10)
+         .fillColor(COLORS.textLight)
+         .font('Helvetica')
+         .text(`This period vs previous ${data.dateRange.days} days`, 50, y);
+      y += 20;
+
+      // Comparison table with branded header
+      const compHeaders = ['Metric', 'This Period', 'Last Period', 'Change'];
+      const compData = [
+        [
+          'Avg Response Time',
+          formatTime(data.comparison.currentPeriod.avgResponseTime),
+          formatTime(data.comparison.previousPeriod.avgResponseTime),
+          `${getChangeArrow(data.comparison.changes.responseTime, true)} ${formatPercent(data.comparison.changes.responseTime)}`
+        ],
+        [
+          'Response Rate',
+          `${data.comparison.currentPeriod.responseRate}%`,
+          `${data.comparison.previousPeriod.responseRate}%`,
+          `${getChangeArrow(data.comparison.changes.responseRate)} ${formatPercent(data.comparison.changes.responseRate)}`
+        ],
+        [
+          'Missed Leads',
+          data.comparison.currentPeriod.missedCount.toString(),
+          data.comparison.previousPeriod.missedCount.toString(),
+          `${getChangeArrow(data.comparison.changes.missedCount, true)} ${data.comparison.changes.missedCount >= 0 ? '+' : ''}${data.comparison.changes.missedCount}`
+        ]
+      ];
+
+      const colWidths = [140, 100, 100, 100];
+      
+      // Header row with branded color
+      doc.fillColor(brandedColors.primary);
+      doc.rect(50, y, contentWidth, 25).fill();
+      doc.fillColor(COLORS.white).font('Helvetica-Bold').fontSize(9);
+      let xPos = 55;
+      compHeaders.forEach((header, i) => {
+        doc.text(header, xPos, y + 8, { width: colWidths[i] - 10 });
+        xPos += colWidths[i];
+      });
+      y += 25;
+
+      // Data rows
+      compData.forEach((row, rowIdx) => {
+        if (rowIdx % 2 === 0) {
+          doc.fillColor(COLORS.background).rect(50, y, contentWidth, 22).fill();
+        }
+        doc.fillColor(COLORS.text).font('Helvetica').fontSize(9);
+        xPos = 55;
+        row.forEach((cell, i) => {
+          if (i === 3) {
+            const isImproved = (rowIdx === 0 && data.comparison.changes.responseTime < 0) ||
+                             (rowIdx === 1 && data.comparison.changes.responseRate > 0) ||
+                             (rowIdx === 2 && data.comparison.changes.missedCount < 0);
+            doc.fillColor(isImproved ? COLORS.excellent : COLORS.critical);
+          }
+          doc.text(cell, xPos, y + 6, { width: colWidths[i] - 10 });
+          doc.fillColor(COLORS.text);
+          xPos += colWidths[i];
+        });
+        y += 22;
+      });
+
+      y += 20;
+
+      // ========================================
+      // SPEED DISTRIBUTION
+      // ========================================
+      
+      doc.fontSize(14)
+         .fillColor(COLORS.text)
+         .font('Helvetica-Bold')
+         .text('⏱️ Response Speed Distribution', 50, y);
+      y += 25;
+
+      const speedData = [
+        { label: '< 1 min', count: data.metrics.under1Min, color: COLORS.excellent },
+        { label: '1-5 min', count: data.metrics.under5Min, color: COLORS.good },
+        { label: '5-15 min', count: data.metrics.under15Min, color: COLORS.average },
+        { label: '15-60 min', count: data.metrics.under1Hr, color: COLORS.poor },
+        { label: '> 1 hour', count: data.metrics.over1Hr, color: COLORS.critical }
+      ];
+
+      const barMaxWidth = 250;
+      const maxCount = Math.max(...speedData.map(d => d.count), 1);
+
+      speedData.forEach((item) => {
+        const barWidth = (item.count / maxCount) * barMaxWidth;
+        const pct = data.metrics.respondedConversations > 0 
+          ? Math.round((item.count / data.metrics.respondedConversations) * 100) 
+          : 0;
+        
+        doc.fontSize(9).fillColor(COLORS.text).font('Helvetica')
+           .text(item.label, 50, y + 3, { width: 70 });
+        
+        doc.roundedRect(125, y, Math.max(barWidth, 4), 18, 3)
+           .fillColor(item.color).fill();
+        
+        doc.fillColor(COLORS.text)
+           .text(`${item.count} (${pct}%)`, 385, y + 3, { width: 80 });
+        
+        y += 24;
+      });
+
+      addBrandedFooter();
+
+      // ========================================
+      // PAGE 2: TEAM & CHANNELS (BRANDED)
+      // ========================================
+      doc.addPage();
+      y = 50;
+
+      // Team Leaderboard
+      doc.fontSize(16)
+         .fillColor(COLORS.text)
+         .font('Helvetica-Bold')
+         .text('🏆 Team Leaderboard', 50, y);
+      y += 30;
+
+      if (data.team.length === 0) {
+        doc.fontSize(10)
+           .fillColor(COLORS.textLight)
+           .font('Helvetica-Oblique')
+           .text('No team data available for this period.', 50, y);
+        y += 30;
+      } else {
+        const teamHeaders = ['Rank', 'Team Member', 'Avg Response', 'Fastest', 'Responses', 'Missed'];
+        const teamColWidths = [40, 140, 90, 80, 70, 60];
+        
+        doc.fillColor(brandedColors.primary).rect(50, y, contentWidth, 22).fill();
+        doc.fillColor(COLORS.white).font('Helvetica-Bold').fontSize(9);
+        xPos = 55;
+        teamHeaders.forEach((header, i) => {
+          doc.text(header, xPos, y + 6, { width: teamColWidths[i] - 5 });
+          xPos += teamColWidths[i];
+        });
+        y += 22;
+
+        const medals = ['🥇', '🥈', '🥉'];
+        data.team.slice(0, 10).forEach((member, idx) => {
+          if (idx % 2 === 0) {
+            doc.fillColor(COLORS.background).rect(50, y, contentWidth, 20).fill();
+          }
+          doc.fillColor(COLORS.text).font('Helvetica').fontSize(9);
+          
+          const rowData = [
+            idx < 3 ? medals[idx] : `${idx + 1}`,
+            member.userName,
+            formatTime(member.avgResponseTime),
+            formatTime(member.fastestResponse),
+            member.totalResponses.toString(),
+            member.missedCount.toString()
+          ];
+          
+          xPos = 55;
+          rowData.forEach((cell, i) => {
+            if (i === 2) doc.fillColor(getResponseTimeColor(member.avgResponseTime));
+            else if (i === 5) doc.fillColor(member.missedCount > 0 ? COLORS.critical : COLORS.excellent);
+            else doc.fillColor(COLORS.text);
+            doc.text(cell, xPos, y + 5, { width: teamColWidths[i] - 5 });
+            xPos += teamColWidths[i];
+          });
+          y += 20;
+        });
+        y += 10;
+      }
+
+      y += 20;
+
+      // Channel Breakdown
+      doc.fontSize(16)
+         .fillColor(COLORS.text)
+         .font('Helvetica-Bold')
+         .text('📱 Channel Breakdown', 50, y);
+      y += 30;
+
+      if (data.channels.length === 0) {
+        doc.fontSize(10)
+           .fillColor(COLORS.textLight)
+           .font('Helvetica-Oblique')
+           .text('No channel data available for this period.', 50, y);
+      } else {
+        const channelHeaders = ['Channel', 'Conversations', 'Avg Response', 'Fast (<5m)', 'Missed'];
+        const channelColWidths = [100, 100, 100, 90, 80];
+        
+        doc.fillColor(brandedColors.primary).rect(50, y, contentWidth, 22).fill();
+        doc.fillColor(COLORS.white).font('Helvetica-Bold').fontSize(9);
+        xPos = 55;
+        channelHeaders.forEach((header, i) => {
+          doc.text(header, xPos, y + 6, { width: channelColWidths[i] - 5 });
+          xPos += channelColWidths[i];
+        });
+        y += 22;
+
+        data.channels.forEach((channel, idx) => {
+          if (idx % 2 === 0) {
+            doc.fillColor(COLORS.background).rect(50, y, contentWidth, 20).fill();
+          }
+          doc.fillColor(COLORS.text).font('Helvetica').fontSize(9);
+          
+          const rowData = [
+            channel.channel.toUpperCase(),
+            channel.totalConversations.toString(),
+            formatTime(channel.avgResponseTime),
+            channel.fastResponses.toString(),
+            channel.missedCount.toString()
+          ];
+          
+          xPos = 55;
+          rowData.forEach((cell, i) => {
+            if (i === 2) doc.fillColor(getResponseTimeColor(channel.avgResponseTime));
+            else if (i === 4) doc.fillColor(channel.missedCount > 0 ? COLORS.critical : COLORS.excellent);
+            else doc.fillColor(COLORS.text);
+            doc.text(cell, xPos, y + 5, { width: channelColWidths[i] - 5 });
+            xPos += channelColWidths[i];
+          });
+          y += 20;
+        });
+      }
+
+      addBrandedFooter();
+
+      // ========================================
+      // PAGE 3: RECOMMENDATIONS (BRANDED)
+      // ========================================
+      doc.addPage();
+      y = 50;
+
+      doc.fontSize(16)
+         .fillColor(COLORS.text)
+         .font('Helvetica-Bold')
+         .text('💡 Recommendations', 50, y);
+      y += 25;
+
+      const recommendations = generateRecommendations(data);
+      
+      recommendations.forEach((rec, idx) => {
+        doc.roundedRect(50, y, contentWidth, 50, 5)
+           .fillColor(COLORS.background)
+           .fill();
+        
+        doc.fontSize(10)
+           .fillColor(brandedColors.primary)
+           .font('Helvetica-Bold')
+           .text(`${idx + 1}. ${rec.title}`, 60, y + 10, { width: contentWidth - 20 });
+        
+        doc.fontSize(9)
+           .fillColor(COLORS.textLight)
+           .font('Helvetica')
+           .text(rec.description, 60, y + 28, { width: contentWidth - 20 });
+        
+        y += 58;
+      });
+
+      // Industry benchmark (can be hidden with custom footer)
+      if (!branding.hidePoweredBy) {
+        y += 10;
+        doc.roundedRect(50, y, contentWidth, 60, 8)
+           .fillColor('#fffbeb')
+           .fill();
+        
+        doc.roundedRect(50, y, 4, 60, 2)
+           .fillColor(COLORS.average)
+           .fill();
+        
+        doc.fontSize(11)
+           .fillColor('#92400e')
+           .font('Helvetica-Bold')
+           .text('📈 Industry Benchmark', 65, y + 12);
+        
+        doc.fontSize(9)
+           .fillColor('#78350f')
+           .font('Helvetica')
+           .text('78% of customers buy from the first business to respond. Responding within 5 minutes makes you 100x more likely to connect with a lead.', 65, y + 28, { width: contentWidth - 30 });
+      }
+
+      addBrandedFooter();
+
+      doc.end();
+      
+    } catch (error) {
+      reject(error);
+    }
+  });
+}

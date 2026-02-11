@@ -78,6 +78,12 @@ import ResponseHeatmap from '../components/ResponseHeatmap';
 import PeriodComparison from '../components/PeriodComparison';
 import ConversationModal from '../components/ConversationModal';
 import UserStatsModal from '../components/UserStatsModal';
+import GoalProgressCard from '../components/GoalProgressCard';
+import InsightsPanel from '../components/InsightsPanel';
+import DateRangePickerComponent, { DateRange } from '../components/DateRangePicker';
+import ActivityFeed from '../components/ActivityFeed';
+import AnimatedStatCard from '../components/AnimatedStatCard';
+import { useConfetti } from '../hooks/useConfetti';
 import './ResponseDashboard.css';
 
 const { Title, Text, Paragraph } = Typography;
@@ -238,12 +244,29 @@ const ResponseDashboard: React.FC = () => {
   const { ghlConnected } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [selectedDays, setSelectedDays] = useState<number>(7);
+  const confetti = useConfetti();
+  
+  // Date range state (replaces selectedDays)
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const selectedDays = dateRange?.days || 7;
+  
+  // Activity feed state
+  const [activityFeedOpen, setActivityFeedOpen] = useState(false);
+  
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<{ id: string; ghlId: string } | null>(null);
   const [notifiedLeads, setNotifiedLeads] = useState<Set<string>>(new Set());
   const [pdfLoading, setPdfLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{ id: string; name: string } | null>(null);
+  
+  // Confetti celebration handler for 100% response rate
+  const handlePerfectScore = useCallback(() => {
+    confetti.burst();
+    toast.success('🎉 Perfect response rate! Amazing work!', {
+      duration: 5000,
+      icon: '🏆'
+    });
+  }, [confetti]);
 
   // Fetch sync status
   const { data: syncStatusData } = useQuery<{ data: SyncStatus }>(
@@ -739,14 +762,10 @@ const ResponseDashboard: React.FC = () => {
           </Text>
         </div>
         <Space wrap className="header-controls">
-          <Segmented
-            options={[
-              { label: '7 Days', value: 7 },
-              { label: '14 Days', value: 14 },
-              { label: '30 Days', value: 30 },
-            ]}
-            value={selectedDays}
-            onChange={(value) => setSelectedDays(value as number)}
+          <DateRangePickerComponent
+            value={dateRange}
+            onChange={setDateRange}
+            disabled={isSyncing}
           />
           <Tooltip title={`Last synced: ${getTimeSinceSync()}`}>
             <Button 
@@ -756,6 +775,12 @@ const ResponseDashboard: React.FC = () => {
             >
               {isSyncing ? 'Syncing...' : 'Sync'}
             </Button>
+          </Tooltip>
+          <Tooltip title="Activity Feed">
+            <Button 
+              icon={<MenuUnfoldOutlined />}
+              onClick={() => setActivityFeedOpen(true)}
+            />
           </Tooltip>
           <Tooltip title="Export CSV">
             <Button 
@@ -827,90 +852,56 @@ const ResponseDashboard: React.FC = () => {
         />
       )}
 
-      {/* Main Stats */}
+      {/* Main Stats with Animations */}
       <Row gutter={[16, 16]} className="main-stats">
         <Col xs={24} sm={12} lg={6}>
-          <Card className="stat-card hero-stat" hoverable>
-            <div className="stat-content">
-              <div className="stat-icon">
-                <ClockCircleOutlined />
-              </div>
-              <div className="stat-details">
-                <Text className="stat-label">Avg Response Time</Text>
-                <div className="stat-value" style={{ color: getGradeColor(metrics.speedGrade) }}>
-                  {formatTime(metrics.avgResponseTime)}
-                </div>
-                <Tag 
-                  color={getGradeColor(metrics.speedGrade)} 
-                  style={{ marginTop: 4, fontWeight: 600 }}
-                >
-                  {getGradeEmoji(metrics.speedGrade)} {metrics.speedGrade}
-                </Tag>
-              </div>
-            </div>
-          </Card>
+          <AnimatedStatCard
+            type="responseTime"
+            value={metrics.avgResponseTime}
+            grade={metrics.speedGrade}
+          />
         </Col>
         
         <Col xs={24} sm={12} lg={6}>
-          <Card className="stat-card" hoverable>
-            <Statistic
-              title={<Text style={{ color: colors.subtext }}>Response Rate</Text>}
-              value={metrics.responseRate}
-              suffix="%"
-              prefix={<CheckCircleOutlined style={{ color: metrics.responseRate >= 90 ? '#52c41a' : '#faad14' }} />}
-              valueStyle={{ 
-                color: metrics.responseRate >= 90 ? '#52c41a' : metrics.responseRate >= 70 ? '#faad14' : '#ff4d4f',
-                fontWeight: 700
-              }}
-            />
-            <Progress 
-              percent={metrics.responseRate} 
-              showInfo={false} 
-              strokeColor={metrics.responseRate >= 90 ? '#52c41a' : metrics.responseRate >= 70 ? '#faad14' : '#ff4d4f'}
-              size="small"
-            />
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {metrics.respondedConversations} of {metrics.totalConversations} conversations
-            </Text>
-          </Card>
+          <AnimatedStatCard
+            type="responseRate"
+            value={metrics.responseRate}
+            suffix="%"
+            totalConversations={metrics.totalConversations}
+            respondedConversations={metrics.respondedConversations}
+            onPerfectScore={handlePerfectScore}
+          />
         </Col>
         
         <Col xs={24} sm={12} lg={6}>
-          <Card 
-            className={`stat-card ${metrics.missedConversations > 0 ? 'warning-card' : 'success-card'}`} 
-            hoverable
-          >
-            <Statistic
-              title={<Text style={{ color: colors.subtext }}>Missed Leads</Text>}
-              value={metrics.missedConversations}
-              prefix={metrics.missedConversations > 0 ? <WarningOutlined /> : <CheckCircleOutlined />}
-              valueStyle={{ 
-                color: metrics.missedConversations > 0 ? '#ff4d4f' : '#52c41a',
-                fontWeight: 700
-              }}
-            />
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {metrics.missedConversations > 0 
-                ? '⚠️ No response after 1 hour' 
-                : '✅ All leads contacted!'}
-            </Text>
-          </Card>
+          <AnimatedStatCard
+            type="missedLeads"
+            value={metrics.missedConversations}
+          />
         </Col>
         
         <Col xs={24} sm={12} lg={6}>
-          <Card className="stat-card" hoverable>
-            <Statistic
-              title={<Text style={{ color: colors.subtext }}>Fastest Response</Text>}
-              value={formatTime(metrics.fastestResponse)}
-              prefix={<TrophyOutlined style={{ color: '#faad14' }} />}
-              valueStyle={{ color: '#52c41a', fontWeight: 700 }}
-            />
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              Your best time this period 🏆
-            </Text>
-          </Card>
+          <AnimatedStatCard
+            type="fastestResponse"
+            value={metrics.fastestResponse}
+          />
         </Col>
       </Row>
+      
+      {/* Activity Feed Drawer */}
+      <Drawer
+        title={null}
+        placement="right"
+        onClose={() => setActivityFeedOpen(false)}
+        open={activityFeedOpen}
+        width={400}
+        bodyStyle={{ padding: 0 }}
+        headerStyle={{ display: 'none' }}
+      >
+        <ActivityFeed 
+          onToggle={() => setActivityFeedOpen(false)}
+        />
+      </Drawer>
 
       {/* SLA Compliance Card */}
       {slaMetrics && (
@@ -1004,6 +995,13 @@ const ResponseDashboard: React.FC = () => {
           </Col>
         </Row>
       )}
+
+      {/* Goal Progress Card */}
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col xs={24}>
+          <GoalProgressCard days={selectedDays} />
+        </Col>
+      </Row>
 
       {/* Charts Row */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
@@ -1135,6 +1133,16 @@ const ResponseDashboard: React.FC = () => {
           <ResponseHeatmap days={30} />
         </Col>
       </Row>
+
+      {/* AI-Powered Insights Section */}
+      <div style={{ marginTop: 16 }}>
+        <InsightsPanel 
+          days={selectedDays} 
+          maxInsights={5}
+          collapsible={true}
+          defaultExpanded={true}
+        />
+      </div>
 
       {/* Tabs Section */}
       <Card style={{ marginTop: 16 }} className="tabs-card">

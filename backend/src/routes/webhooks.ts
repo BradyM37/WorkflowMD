@@ -10,6 +10,48 @@ import { pool } from '../lib/database';
 import { logger } from '../lib/logger';
 import { ApiResponse } from '../lib/response';
 import { retryQuery } from '../middleware/database-health';
+import { requireAuth, requireGHLConnection } from '../middleware/auth';
+import { asyncHandler } from '../middleware/error-handler';
+
+/**
+ * Log a webhook event to the database
+ */
+async function logWebhook(
+  source: 'ghl' | 'stripe' | 'other',
+  eventType: string,
+  payload: any,
+  options: {
+    locationId?: string;
+    headers?: any;
+    ipAddress?: string;
+    status?: 'received' | 'processed' | 'failed' | 'ignored';
+    errorMessage?: string;
+    processingTimeMs?: number;
+  } = {}
+): Promise<void> {
+  try {
+    await pool.query(
+      `INSERT INTO webhook_logs (
+        source, event_type, location_id, payload, headers, ip_address, 
+        status, error_message, processing_time_ms
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [
+        source,
+        eventType,
+        options.locationId || null,
+        JSON.stringify(payload),
+        options.headers ? JSON.stringify(options.headers) : null,
+        options.ipAddress || null,
+        options.status || 'received',
+        options.errorMessage || null,
+        options.processingTimeMs || null
+      ]
+    );
+  } catch (error) {
+    // Don't fail the webhook if logging fails
+    logger.warn('Failed to log webhook', { source, eventType }, error as Error);
+  }
+}
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2023-08-16',
@@ -27,11 +69,17 @@ webhookRouter.post(
   '/stripe',
   express.raw({ type: 'application/json' }),
   async (req, res) => {
+    const startTime = Date.now();
     const sig = req.headers['stripe-signature'];
     
     if (!sig) {
       logger.warn('Stripe webhook missing signature', {
         ip: req.ip
+      });
+      await logWebhook('stripe', 'unknown', { raw: 'signature_missing' }, {
+        ipAddress: req.ip,
+        status: 'failed',
+        errorMessage: 'Missing signature'
       });
       return res.status(400).send('Missing signature');
     }
@@ -56,11 +104,23 @@ webhookRouter.post(
         eventType: event.type,
         ip: req.ip
       });
+
+      // Log the received webhook
+      await logWebhook('stripe', event.type, { eventId: event.id }, {
+        ipAddress: req.ip,
+        status: 'received'
+      });
     } catch (err: any) {
       logger.error('Stripe webhook signature verification failed', {
         error: err.message,
         ip: req.ip
       }, err);
+      
+      await logWebhook('stripe', 'unknown', { error: err.message }, {
+        ipAddress: req.ip,
+        status: 'failed',
+        errorMessage: `Signature verification failed: ${err.message}`
+      });
       
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
@@ -115,12 +175,27 @@ webhookRouter.post(
         eventType: event.type
       });
 
+      // Log successful processing
+      await logWebhook('stripe', event.type, { eventId: event.id }, {
+        ipAddress: req.ip,
+        status: 'processed',
+        processingTimeMs: Date.now() - startTime
+      });
+
       return res.json({ received: true });
     } catch (error) {
       logger.error('Error processing Stripe webhook', {
         eventId: event.id,
         eventType: event.type
       }, error as Error);
+      
+      // Log failed processing
+      await logWebhook('stripe', event.type, { eventId: event.id }, {
+        ipAddress: req.ip,
+        status: 'failed',
+        errorMessage: (error as Error).message,
+        processingTimeMs: Date.now() - startTime
+      });
       
       return res.status(500).json({ 
         error: 'Webhook processing failed',
@@ -351,12 +426,26 @@ async function processStripeEvent(event: Stripe.Event): Promise<void> {
  * Handle webhook events (subscriptions, contacts, etc.)
  */
 webhookRouter.post('/events', async (req, res) => {
+  const startTime = Date.now();
   const signature = req.headers['x-ghl-signature'] as string;
+  const eventType = req.body.type || 'unknown';
+  const locationId = req.body.locationId || req.body.location_id;
   
   logger.info('GHL webhook received', {
-    eventType: req.body.type,
-    locationId: req.body.locationId,
+    eventType,
+    locationId,
     ip: req.ip
+  });
+
+  // Log the incoming webhook
+  await logWebhook('ghl', eventType, req.body, {
+    locationId,
+    headers: {
+      'x-ghl-signature': signature ? '[present]' : '[missing]',
+      'content-type': req.headers['content-type']
+    },
+    ipAddress: req.ip,
+    status: 'received'
   });
 
   // Verify webhook signature if shared secret is configured
@@ -369,13 +458,18 @@ webhookRouter.post('/events', async (req, res) => {
     
     if (signature !== expectedSignature) {
       logger.warn('GHL webhook signature mismatch', { ip: req.ip });
+      await logWebhook('ghl', eventType, req.body, {
+        locationId,
+        ipAddress: req.ip,
+        status: 'failed',
+        errorMessage: 'Signature mismatch',
+        processingTimeMs: Date.now() - startTime
+      });
       return res.status(401).json({ error: 'Invalid signature' });
     }
   }
 
   try {
-    const eventType = req.body.type;
-    const locationId = req.body.locationId || req.body.location_id;
     const data = req.body.data || req.body;
 
     // Process GHL subscription/payment events
@@ -580,6 +674,14 @@ webhookRouter.post('/events', async (req, res) => {
         logger.debug('Unhandled GHL event type', { eventType, locationId });
     }
 
+    // Log successful processing
+    await logWebhook('ghl', eventType, { summary: 'processed' }, {
+      locationId,
+      ipAddress: req.ip,
+      status: 'processed',
+      processingTimeMs: Date.now() - startTime
+    });
+
     // Acknowledge receipt
     res.json({ 
       received: true,
@@ -587,6 +689,15 @@ webhookRouter.post('/events', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
+    // Log failed processing
+    await logWebhook('ghl', eventType, req.body, {
+      locationId,
+      ipAddress: req.ip,
+      status: 'failed',
+      errorMessage: (error as Error).message,
+      processingTimeMs: Date.now() - startTime
+    });
+
     logger.error('GHL webhook processing error', {
       eventType: req.body.type
     }, error as Error);
@@ -612,3 +723,169 @@ webhookRouter.get('/health', (_req, res) => {
     }
   });
 });
+
+/**
+ * GET /webhooks/logs
+ * View recent webhook events for debugging
+ */
+webhookRouter.get(
+  '/logs',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+    const source = req.query.source as string; // 'ghl', 'stripe', or all
+    const status = req.query.status as string; // 'received', 'processed', 'failed', 'ignored'
+    const eventType = req.query.eventType as string;
+
+    let query = `
+      SELECT 
+        id,
+        source,
+        event_type,
+        location_id,
+        payload,
+        ip_address,
+        processed_at,
+        status,
+        error_message,
+        processing_time_ms
+      FROM webhook_logs
+      WHERE (location_id = $1 OR location_id IS NULL)
+    `;
+    const params: any[] = [locationId];
+    let paramIndex = 2;
+
+    // Filter by source
+    if (source && ['ghl', 'stripe', 'other'].includes(source)) {
+      query += ` AND source = $${paramIndex}`;
+      params.push(source);
+      paramIndex++;
+    }
+
+    // Filter by status
+    if (status && ['received', 'processed', 'failed', 'ignored'].includes(status)) {
+      query += ` AND status = $${paramIndex}`;
+      params.push(status);
+      paramIndex++;
+    }
+
+    // Filter by event type (partial match)
+    if (eventType) {
+      query += ` AND event_type ILIKE $${paramIndex}`;
+      params.push(`%${eventType}%`);
+      paramIndex++;
+    }
+
+    query += ` ORDER BY processed_at DESC LIMIT $${paramIndex}`;
+    params.push(limit);
+
+    const result = await pool.query(query, params);
+
+    // Get stats
+    const statsResult = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE status = 'processed') as processed,
+        COUNT(*) FILTER (WHERE status = 'failed') as failed,
+        COUNT(*) FILTER (WHERE processed_at > NOW() - INTERVAL '24 hours') as last_24h
+      FROM webhook_logs
+      WHERE location_id = $1 OR location_id IS NULL
+    `, [locationId]);
+
+    const stats = statsResult.rows[0];
+
+    return ApiResponse.success(res, {
+      logs: result.rows.map(row => ({
+        id: row.id,
+        source: row.source,
+        eventType: row.event_type,
+        locationId: row.location_id,
+        payload: row.payload,
+        ipAddress: row.ip_address,
+        processedAt: row.processed_at,
+        status: row.status,
+        errorMessage: row.error_message,
+        processingTimeMs: row.processing_time_ms
+      })),
+      stats: {
+        total: parseInt(stats.total) || 0,
+        processed: parseInt(stats.processed) || 0,
+        failed: parseInt(stats.failed) || 0,
+        last24h: parseInt(stats.last_24h) || 0
+      },
+      limit
+    });
+  })
+);
+
+/**
+ * GET /webhooks/logs/stats
+ * Get webhook statistics
+ */
+webhookRouter.get(
+  '/logs/stats',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+
+    // Get stats by source
+    const bySourceResult = await pool.query(`
+      SELECT 
+        source,
+        COUNT(*) as count,
+        COUNT(*) FILTER (WHERE status = 'processed') as processed,
+        COUNT(*) FILTER (WHERE status = 'failed') as failed
+      FROM webhook_logs
+      WHERE (location_id = $1 OR location_id IS NULL)
+        AND processed_at > NOW() - INTERVAL '7 days'
+      GROUP BY source
+    `, [locationId]);
+
+    // Get stats by event type
+    const byEventResult = await pool.query(`
+      SELECT 
+        event_type,
+        COUNT(*) as count,
+        COUNT(*) FILTER (WHERE status = 'failed') as failed
+      FROM webhook_logs
+      WHERE (location_id = $1 OR location_id IS NULL)
+        AND processed_at > NOW() - INTERVAL '7 days'
+      GROUP BY event_type
+      ORDER BY count DESC
+      LIMIT 10
+    `, [locationId]);
+
+    // Get hourly trend (last 24 hours)
+    const hourlyResult = await pool.query(`
+      SELECT 
+        DATE_TRUNC('hour', processed_at) as hour,
+        COUNT(*) as count
+      FROM webhook_logs
+      WHERE (location_id = $1 OR location_id IS NULL)
+        AND processed_at > NOW() - INTERVAL '24 hours'
+      GROUP BY DATE_TRUNC('hour', processed_at)
+      ORDER BY hour
+    `, [locationId]);
+
+    return ApiResponse.success(res, {
+      bySource: bySourceResult.rows.map(row => ({
+        source: row.source,
+        count: parseInt(row.count) || 0,
+        processed: parseInt(row.processed) || 0,
+        failed: parseInt(row.failed) || 0
+      })),
+      byEventType: byEventResult.rows.map(row => ({
+        eventType: row.event_type,
+        count: parseInt(row.count) || 0,
+        failed: parseInt(row.failed) || 0
+      })),
+      hourlyTrend: hourlyResult.rows.map(row => ({
+        hour: row.hour,
+        count: parseInt(row.count) || 0
+      }))
+    });
+  })
+);

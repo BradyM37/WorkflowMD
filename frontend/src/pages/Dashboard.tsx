@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from 'react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { 
-  Card, List, Button, Typography, Space, Tag, Row, Col, 
+import {
+  Card, List, Button, Typography, Space, Tag, Row, Col,
   Statistic, Badge, Avatar, Input, Select, Empty,
   Tabs
 } from 'antd';
-import { 
+import {
   ThunderboltOutlined, 
   HistoryOutlined, 
   CrownOutlined, 
@@ -19,8 +19,11 @@ import {
   AlertOutlined,
   DashboardOutlined,
   LineChartOutlined,
-  CalendarOutlined
+  CalendarOutlined,
+  BarChartOutlined
 } from '@ant-design/icons';
+import BenchmarkBadge from '../components/BenchmarkBadge';
+import BenchmarkCard from '../components/BenchmarkCard';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -61,7 +64,7 @@ interface AnalysisHistory {
 function getSavedHistory(): AnalysisHistory[] {
   const saved = localStorage.getItem('analysis_history');
   if (!saved) return [];
-  
+
   const history = JSON.parse(saved);
   // Migrate old risk_score to health_score if needed
   return history.map((item: any) => ({
@@ -91,6 +94,7 @@ const Dashboard: React.FC = () => {
   const [localHistory, setLocalHistory] = useState<AnalysisHistory[]>(getSavedHistory());
   const [activeTab, setActiveTab] = useState('workflows');
   const [scheduleModalVisible, setScheduleModalVisible] = useState(false);
+  const [benchmarkModalVisible, setBenchmarkModalVisible] = useState(false);
 
   // Handle SSO success - clear demo mode and use real session
   useEffect(() => {
@@ -100,17 +104,17 @@ const Dashboard: React.FC = () => {
       localStorage.removeItem('demo_mode');
       localStorage.removeItem('user');
       localStorage.removeItem('auth_token');
-      
+
       // Re-check auth to pick up the real session from cookies
       checkAuth();
-      
+
       // Invalidate cached queries to fetch real data
       queryClient.invalidateQueries('workflows');
-      
+
       // Clean up the URL
       searchParams.delete('sso');
       setSearchParams(searchParams, { replace: true });
-      
+
       toast.success('Connected to GoHighLevel!');
     }
   }, [searchParams, setSearchParams, checkAuth, queryClient]);
@@ -119,23 +123,23 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const ghlConnected = searchParams.get('ghl_connected');
     const authToken = searchParams.get('auth_token');
-    
+
     if (ghlConnected === 'true' && authToken) {
       // Store the auth token and connection status
       localStorage.setItem('auth_token', authToken);
       localStorage.setItem('ghl_connected', 'true');
-      
+
       // Re-check auth with new token
       checkAuth();
-      
+
       // Invalidate cached queries to fetch real data
       queryClient.invalidateQueries('workflows');
-      
+
       // Clean up the URL
       searchParams.delete('ghl_connected');
       searchParams.delete('auth_token');
       setSearchParams(searchParams, { replace: true });
-      
+
       toast.success('GHL account connected!');
     }
   }, [searchParams, setSearchParams, checkAuth, queryClient]);
@@ -147,13 +151,13 @@ const Dashboard: React.FC = () => {
     bodyText: isDarkMode ? '#d9d9d9' : '#595959',
     mutedText: isDarkMode ? '#8c8c8c' : '#8c8c8c',
   };
-  
+
   // Get current schedule from localStorage
   const currentSchedule = JSON.parse(localStorage.getItem('scan_schedule') || 'null');
 
   // Fetch workflows from API
-  const { 
-    data: workflows, 
+  const {
+    data: workflows,
     isLoading: loadingWorkflows,
     refetch: refetchWorkflows
   } = useQuery<Workflow[]>(
@@ -193,12 +197,12 @@ const Dashboard: React.FC = () => {
     console.log('Analyzing workflow:', workflow.id);
     setAnalyzing(workflow.id);
     toast.info('Analyzing workflow...');
-    
+
     try {
       // Call real analysis API
       const response = await api.post('/api/analyze', { workflowId: workflow.id });
       const analysisResult = response.data.data || response.data;
-      
+
       // Convert to AnalysisHistory format
       const analysis: AnalysisHistory = {
         id: analysisResult.id,
@@ -210,16 +214,16 @@ const Dashboard: React.FC = () => {
         created_at: analysisResult.created_at || new Date().toISOString(),
         issues: analysisResult.issues
       };
-      
+
       // Save to history
       const updatedHistory = saveHistory(analysis);
       setLocalHistory(updatedHistory);
-      
+
       setAnalyzing(null);
       toast.success('Workflow analyzed successfully');
-      
-      navigate(`/analysis/${analysis.id}`, { 
-        state: { 
+
+      navigate(`/analysis/${analysis.id}`, {
+        state: {
           analysis: analysisResult
         }
       });
@@ -237,7 +241,7 @@ const Dashboard: React.FC = () => {
       const today = new Date().toDateString();
       return new Date(h.created_at).toDateString() === today;
     }).length,
-    avgHealthScore: localHistory.length > 0 
+    avgHealthScore: localHistory.length > 0
       ? Math.round(localHistory.reduce((acc, h) => acc + h.health_score, 0) / localHistory.length)
       : 0,
     criticalWorkflows: localHistory.filter(h => h.health_score < 30).length  // Critical if health score < 30
@@ -245,8 +249,8 @@ const Dashboard: React.FC = () => {
 
   if (loadingWorkflows) {
     return (
-      <LoadingState 
-        message="Loading Your Workflows" 
+      <LoadingState
+        message="Loading Your Workflows"
         tip="Fetching workflow data from GoHighLevel..."
       />
     );
@@ -255,7 +259,7 @@ const Dashboard: React.FC = () => {
   return (
     <div>
       {/* Hero Section */}
-      <Card style={{ 
+      <Card style={{
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         border: 'none',
         marginBottom: '24px'
@@ -269,12 +273,12 @@ const Dashboard: React.FC = () => {
               Analyze your GoHighLevel workflows to find configuration errors, performance issues, and optimization opportunities.
             </Paragraph>
             <Space style={{ marginTop: '16px' }}>
-              <Button 
+              <Button
                 type="default"
-                icon={<LineChartOutlined />} 
+                icon={<LineChartOutlined />}
                 size="large"
                 onClick={() => navigate('/workflow-graph')}
-                style={{ 
+                style={{
                   background: 'white',
                   borderColor: 'white',
                   fontWeight: 'bold',
@@ -285,8 +289,8 @@ const Dashboard: React.FC = () => {
                 View Workflow Graph
               </Button>
               {subscription === 'free' && (
-                <Button 
-                  icon={<CrownOutlined />} 
+                <Button
+                  icon={<CrownOutlined />}
                   size="large"
                   onClick={() => navigate('/pricing')}
                 >
@@ -364,13 +368,13 @@ const Dashboard: React.FC = () => {
       {/* Main Content with Tabs */}
       <Card>
         <Tabs activeKey={activeTab} onChange={setActiveTab}>
-          <TabPane 
+          <TabPane
             tab={
               <span>
                 <ThunderboltOutlined /> Workflows
                 <Badge count={filteredWorkflows?.length || 0} style={{ marginLeft: '8px' }} />
               </span>
-            } 
+            }
             key="workflows"
           >
             {/* Schedule Status Banner */}
@@ -403,7 +407,7 @@ const Dashboard: React.FC = () => {
                     </Text>
                   </div>
                 </Space>
-                <Button 
+                <Button
                   onClick={() => setScheduleModalVisible(true)}
                   style={{ background: 'white', color: '#667eea', borderColor: 'white' }}
                 >
@@ -477,21 +481,21 @@ const Dashboard: React.FC = () => {
                   <List.Item>
                     <Card
                       hoverable
-                      style={{ 
+                      style={{
                         height: '100%',
-                        background: analyzing === workflow.id 
-                          ? (isDarkMode ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.05)') 
+                        background: analyzing === workflow.id
+                          ? (isDarkMode ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.05)')
                           : colors.cardBg
                       }}
                     >
                       <Card.Meta
                         avatar={
-                          <Avatar 
+                          <Avatar
                             size={48}
-                            style={{ 
-                              background: workflow.status === 'active' 
-                                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-                                : '#8c8c8c' 
+                            style={{
+                              background: workflow.status === 'active'
+                                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                                : '#8c8c8c'
                             }}
                           >
                             {workflow.name.charAt(0)}
@@ -572,16 +576,16 @@ const Dashboard: React.FC = () => {
             )}
           </TabPane>
 
-          <TabPane 
+          <TabPane
             tab={
               <span>
                 <HistoryOutlined /> Scan History
                 <Badge count={localHistory.length} style={{ marginLeft: '8px' }} />
               </span>
-            } 
+            }
             key="history"
           >
-            <ScanHistoryPanel 
+            <ScanHistoryPanel
               history={localHistory}
               onClearHistory={() => {
                 localStorage.removeItem('analysis_history');
@@ -595,8 +599,8 @@ const Dashboard: React.FC = () => {
 
       {/* Upgrade Card for Free Users */}
       {subscription === 'free' && (
-        <Card 
-          style={{ 
+        <Card
+          style={{
             background: 'linear-gradient(135deg, #ffd89b 0%, #19547b 100%)',
             border: 'none',
             marginTop: '24px'
@@ -614,8 +618,8 @@ const Dashboard: React.FC = () => {
               </Space>
             </Col>
             <Col xs={24} lg={6}>
-              <Button 
-                size="large" 
+              <Button
+                size="large"
                 block
                 onClick={() => navigate('/pricing')}
                 style={{ fontWeight: 'bold' }}

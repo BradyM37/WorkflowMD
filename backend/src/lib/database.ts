@@ -200,6 +200,105 @@ export async function initDatabase() {
       ON scan_history(location_id)
     `);
 
+    // Dismissed insights table (for hiding insights temporarily)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS dismissed_insights (
+        id SERIAL PRIMARY KEY,
+        location_id VARCHAR(255) NOT NULL,
+        insight_id VARCHAR(255) NOT NULL,
+        dismissed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(location_id, insight_id)
+      )
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_dismissed_insights_location 
+      ON dismissed_insights(location_id)
+    `);
+
+    // Addressed insights table (for tracking action taken)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS addressed_insights (
+        id SERIAL PRIMARY KEY,
+        location_id VARCHAR(255) NOT NULL,
+        insight_id VARCHAR(255) NOT NULL,
+        addressed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(location_id, insight_id)
+      )
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_addressed_insights_location 
+      ON addressed_insights(location_id)
+    `);
+
+    // Sync state table for tracking conversation sync status
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS sync_state (
+        location_id VARCHAR(255) PRIMARY KEY,
+        sync_status VARCHAR(50) DEFAULT 'pending',
+        last_sync_at TIMESTAMP,
+        error_message TEXT
+      )
+    `);
+
+    // Conversations table for response tracking
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS conversations (
+        id VARCHAR(255) PRIMARY KEY DEFAULT gen_random_uuid()::VARCHAR,
+        ghl_conversation_id VARCHAR(255) UNIQUE NOT NULL,
+        location_id VARCHAR(255) NOT NULL,
+        contact_id VARCHAR(255),
+        contact_name VARCHAR(255),
+        contact_email VARCHAR(255),
+        contact_phone VARCHAR(255),
+        channel VARCHAR(50),
+        first_inbound_at TIMESTAMP,
+        first_response_at TIMESTAMP,
+        response_time_seconds INTEGER,
+        assigned_user_id VARCHAR(255),
+        assigned_user_name VARCHAR(255),
+        status VARCHAR(50),
+        is_missed BOOLEAN DEFAULT false,
+        last_message_at TIMESTAMP,
+        message_count INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_conversations_location ON conversations(location_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_conversations_first_inbound ON conversations(first_inbound_at)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_conversations_is_missed ON conversations(is_missed)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_conversations_channel ON conversations(channel)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_conversations_assigned_user ON conversations(assigned_user_id)`);
+
+    // Daily metrics aggregation table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS daily_metrics (
+        id SERIAL PRIMARY KEY,
+        location_id VARCHAR(255) NOT NULL,
+        date DATE NOT NULL,
+        total_conversations INTEGER DEFAULT 0,
+        new_conversations INTEGER DEFAULT 0,
+        avg_response_time INTEGER,
+        median_response_time INTEGER,
+        min_response_time INTEGER,
+        max_response_time INTEGER,
+        responses_under_1min INTEGER DEFAULT 0,
+        responses_under_5min INTEGER DEFAULT 0,
+        responses_under_15min INTEGER DEFAULT 0,
+        responses_under_1hr INTEGER DEFAULT 0,
+        responses_over_1hr INTEGER DEFAULT 0,
+        missed_conversations INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(location_id, date)
+      )
+    `);
+
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_daily_metrics_location_date ON daily_metrics(location_id, date)`);
+
     console.log('✅ Database tables initialized');
   } catch (error) {
     console.error('❌ Database initialization error:', error);
