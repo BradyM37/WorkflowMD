@@ -536,21 +536,23 @@ authRouter.get('/oauth/callback', asyncHandler(async (req: any, res: any) => {
   });
 
   try {
-    // Exchange code for tokens
+    // Exchange code for tokens - GHL requires form-urlencoded
+    const tokenParams = new URLSearchParams({
+      client_id: process.env.GHL_CLIENT_ID!,
+      client_secret: process.env.GHL_CLIENT_SECRET!,
+      grant_type: 'authorization_code',
+      code: code,
+      user_type: 'Location',
+      redirect_uri: process.env.REDIRECT_URI!
+    });
+
     const tokenResponse = await axios.post(
       'https://services.leadconnectorhq.com/oauth/token',
-      {
-        client_id: process.env.GHL_CLIENT_ID,
-        client_secret: process.env.GHL_CLIENT_SECRET,
-        grant_type: 'authorization_code',
-        code: code,
-        user_type: 'Location',
-        redirect_uri: process.env.REDIRECT_URI
-      },
+      tokenParams.toString(),
       {
         timeout: 10000,
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json'
         }
       }
