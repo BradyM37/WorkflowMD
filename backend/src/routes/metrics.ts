@@ -15,7 +15,7 @@ import {
   getDailyTrend,
   BENCHMARKS
 } from '../lib/response-analyzer';
-import { getLocationUsers } from '../lib/ghl-conversations';
+import { getLocationUsers, getConversationMessages } from '../lib/ghl-conversations';
 import { pool } from '../lib/database';
 
 const metricsRouter = Router();
@@ -197,7 +197,7 @@ metricsRouter.get(
     
     logger.info('Fetching conversation detail', { locationId, conversationId, requestId: req.id });
     
-    // Get conversation details
+    // Get conversation details from our DB
     const convResult = await pool.query(`
       SELECT 
         id, ghl_conversation_id, contact_id, contact_name, 
@@ -214,13 +214,29 @@ metricsRouter.get(
     
     const conversation = convResult.rows[0];
     
-    // Get messages for this conversation
-    const msgResult = await pool.query(`
-      SELECT id, direction, body, date_added, message_type
-      FROM messages
-      WHERE conversation_id = $1
-      ORDER BY date_added ASC
-    `, [conversationId]);
+    // Fetch messages directly from GHL
+    let messages: any[] = [];
+    try {
+      const ghlMessages = await getConversationMessages(
+        conversation.ghl_conversation_id, 
+        locationId, 
+        { limit: 50 }
+      );
+      
+      // Sort messages by date (oldest first for timeline)
+      messages = ghlMessages
+        .sort((a, b) => new Date(a.dateAdded).getTime() - new Date(b.dateAdded).getTime())
+        .map(msg => ({
+          id: msg.id,
+          direction: msg.direction,
+          body: msg.body || '',
+          dateAdded: msg.dateAdded,
+          messageType: msg.type
+        }));
+    } catch (err) {
+      logger.warn('Failed to fetch messages from GHL', { conversationId }, err as Error);
+      // Return conversation without messages if GHL fails
+    }
     
     return ApiResponse.success(res, {
       id: conversation.id,
@@ -235,13 +251,7 @@ metricsRouter.get(
       isMissed: conversation.is_missed,
       assignedUserId: conversation.assigned_user_id,
       assignedUserName: conversation.assigned_user_name,
-      messages: msgResult.rows.map(msg => ({
-        id: msg.id,
-        direction: msg.direction,
-        body: msg.body,
-        dateAdded: msg.date_added,
-        messageType: msg.message_type
-      }))
+      messages
     });
   })
 );
