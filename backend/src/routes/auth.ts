@@ -610,40 +610,6 @@ authRouter.get('/oauth/callback', asyncHandler(async (req: any, res: any) => {
         }
       });
 
-      // Generate session tokens
-      const { generateJWT, generateRefreshToken } = await import('../lib/user-auth');
-      const user = { 
-        id: userId!, 
-        email: `${tokens.locationId}@ghl.local`,
-        email_verified: true,
-        created_at: new Date(),
-        updated_at: new Date()
-      };
-      const jwtToken = generateJWT(user);
-      const refreshToken = generateRefreshToken(user);
-
-      // Create session record in database
-      const crypto = await import('crypto');
-      const sessionId = (await import('uuid')).v4();
-      const tokenHash = crypto.createHash('sha256').update(jwtToken).digest('hex');
-      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-      
-      await pool.query(
-        `INSERT INTO sessions (id, user_id, token_hash, ip_address, user_agent, expires_at)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [sessionId, userId, tokenHash, req.ip || null, req.get('user-agent') || null, expiresAt]
-      );
-
-      // Set session cookies
-      const cookieOptions = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax' as const,
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-      };
-      res.cookie('token', jwtToken, cookieOptions);
-      res.cookie('refreshToken', refreshToken, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
-
       logger.info('Created new user via OAuth', { userId, locationId: tokens.locationId });
     }
 
@@ -682,26 +648,22 @@ authRouter.get('/oauth/callback', asyncHandler(async (req: any, res: any) => {
       requestId: req.id
     });
 
-    // Get or generate JWT for the redirect
-    let jwtToken: string;
-    const existingToken = req.cookies.auth_token || req.cookies.token;
-    if (existingToken) {
-      jwtToken = existingToken;
-    } else {
-      // Generate new token for this user
-      const { generateJWT } = await import('../lib/user-auth');
-      const userForToken = { 
-        id: userId!, 
-        email: `${tokens.locationId}@ghl.local`,
-        email_verified: true,
-        created_at: new Date(),
-        updated_at: new Date()
-      };
-      jwtToken = generateJWT(userForToken);
-    }
+    // Generate JWT for the redirect (and create session if needed)
+    const { generateJWT, createSession } = await import('../lib/user-auth');
+    const userForToken = { 
+      id: userId!, 
+      email: `${tokens.locationId}@ghl.local`,
+      email_verified: true,
+      created_at: new Date(),
+      updated_at: new Date()
+    };
+    const jwtToken = generateJWT(userForToken);
+    
+    // Create session for this token (ensures validateSession will work)
+    await createSession(userId!, jwtToken, req.ip, req.get('user-agent'));
 
-    // Redirect to dashboard with token in URL fragment (more secure than query params)
-    // Frontend will extract and store the token
+    // Redirect to dashboard with token
+    // Frontend will extract and store the token in localStorage
     const dashboardUrl = process.env.FRONTEND_URL 
       ? `${process.env.FRONTEND_URL}/dashboard?ghl_connected=true&auth_token=${encodeURIComponent(jwtToken)}`
       : `/dashboard?ghl_connected=true&auth_token=${encodeURIComponent(jwtToken)}`;

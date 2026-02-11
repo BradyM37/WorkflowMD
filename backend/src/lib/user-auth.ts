@@ -484,7 +484,7 @@ export function verifyRefreshToken(token: string): JWTPayload {
 /**
  * Create session record
  */
-async function createSession(
+export async function createSession(
   userId: string,
   token: string,
   ipAddress?: string,
