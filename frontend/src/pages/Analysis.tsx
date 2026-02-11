@@ -225,16 +225,40 @@ Low Priority: ${issues.filter((i: Issue) => i.type === 'low').length}
         Back to Dashboard
       </Button>
 
-      {/* Hero Card with Risk Score */}
-      <Card style={{ 
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        border: 'none',
-        marginBottom: '24px',
-        color: 'white'
-      }}>
-        <Row gutter={[24, 24]} align="middle">
+      {/* Hero Card with Risk Score - Enhanced */}
+      <Card 
+        className="analysis-hero-card"
+        style={{ 
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%)',
+          backgroundSize: '200% 200%',
+          animation: 'gradientShift 8s ease infinite',
+          border: 'none',
+          marginBottom: '24px',
+          color: 'white',
+          borderRadius: '16px',
+          boxShadow: '0 20px 60px rgba(102, 126, 234, 0.4), 0 0 40px rgba(118, 75, 162, 0.3)',
+          position: 'relative',
+          overflow: 'hidden'
+        }}
+      >
+        {/* Animated background particles/glow */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 50%)',
+          pointerEvents: 'none'
+        }} />
+        
+        <Row gutter={[24, 24]} align="middle" style={{ position: 'relative', zIndex: 1 }}>
           <Col xs={24} lg={8}>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center',
+              animation: 'float 3s ease-in-out infinite'
+            }}>
               <HealthScoreGauge 
                 score={analysis.healthScore}
                 title="Workflow Health"
@@ -247,46 +271,85 @@ Low Priority: ${issues.filter((i: Issue) => i.type === 'low').length}
           <Col xs={24} lg={16}>
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <div>
-                <Title level={2} style={{ color: 'white', margin: 0 }}>
+                <Title level={2} style={{ 
+                  color: 'white', 
+                  margin: 0,
+                  textShadow: '0 2px 20px rgba(0,0,0,0.2)',
+                  fontSize: '32px'
+                }}>
                   Workflow Analysis Complete
                 </Title>
-                <Paragraph style={{ color: 'rgba(255,255,255,0.9)', fontSize: '16px', marginTop: '8px' }}>
-                  We've analyzed your workflow and found {analysis.issuesFound || analysis.issues?.length} issues that need attention.
+                <Paragraph style={{ 
+                  color: 'rgba(255,255,255,0.95)', 
+                  fontSize: '18px', 
+                  marginTop: '12px',
+                  textShadow: '0 1px 10px rgba(0,0,0,0.1)'
+                }}>
+                  We've analyzed your workflow and found <strong>{analysis.issuesFound || analysis.issues?.length} issues</strong> that need attention.
                 </Paragraph>
               </div>
               
-              <Row gutter={[24, 0]}>
+              <Row gutter={[32, 16]}>
                 <Col xs={12} sm={6}>
-                  <Statistic 
-                    title="Health Level" 
-                    value={getHealthLevel(analysis.healthScore)}
-                    valueStyle={{ color: 'white', fontSize: '18px' }}
-                    titleStyle={{ color: 'rgba(255,255,255,0.8)' }}
-                  />
+                  <div style={{
+                    background: 'rgba(255,255,255,0.15)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    textAlign: 'center',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    <Text style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', display: 'block' }}>Health Level</Text>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'white', marginTop: '4px' }}>
+                      {getHealthLevel(analysis.healthScore)}
+                    </div>
+                  </div>
                 </Col>
                 <Col xs={12} sm={6}>
-                  <Statistic 
-                    title="Issues Found" 
-                    value={analysis.issuesFound || analysis.issues?.length}
-                    valueStyle={{ color: 'white', fontSize: '24px' }}
-                    titleStyle={{ color: 'rgba(255,255,255,0.8)' }}
-                  />
+                  <div style={{
+                    background: 'rgba(255,255,255,0.15)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    textAlign: 'center',
+                    border: '1px solid rgba(255,255,255,0.2)'
+                  }}>
+                    <Text style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', display: 'block' }}>Issues Found</Text>
+                    <div style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginTop: '4px' }}>
+                      {analysis.issuesFound || analysis.issues?.length}
+                    </div>
+                  </div>
                 </Col>
                 <Col xs={12} sm={6}>
-                  <Statistic 
-                    title="Critical" 
-                    value={analysis.issues?.filter((i: Issue) => i.type === 'critical').length || 0}
-                    valueStyle={{ color: 'white', fontSize: '24px' }}
-                    titleStyle={{ color: 'rgba(255,255,255,0.8)' }}
-                  />
+                  <div style={{
+                    background: 'rgba(255,77,79,0.3)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    textAlign: 'center',
+                    border: '1px solid rgba(255,77,79,0.4)'
+                  }}>
+                    <Text style={{ fontSize: '12px', color: 'rgba(255,255,255,0.9)', display: 'block' }}>Critical</Text>
+                    <div style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginTop: '4px' }}>
+                      {analysis.issues?.filter((i: Issue) => i.type === 'critical').length || 0}
+                    </div>
+                  </div>
                 </Col>
                 <Col xs={12} sm={6}>
-                  <Statistic 
-                    title="High Priority" 
-                    value={analysis.issues?.filter((i: Issue) => i.type === 'high').length || 0}
-                    valueStyle={{ color: 'white', fontSize: '24px' }}
-                    titleStyle={{ color: 'rgba(255,255,255,0.8)' }}
-                  />
+                  <div style={{
+                    background: 'rgba(250,140,22,0.3)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    textAlign: 'center',
+                    border: '1px solid rgba(250,140,22,0.4)'
+                  }}>
+                    <Text style={{ fontSize: '12px', color: 'rgba(255,255,255,0.9)', display: 'block' }}>High Priority</Text>
+                    <div style={{ fontSize: '28px', fontWeight: 'bold', color: 'white', marginTop: '4px' }}>
+                      {analysis.issues?.filter((i: Issue) => i.type === 'high').length || 0}
+                    </div>
+                  </div>
                 </Col>
               </Row>
             </Space>
@@ -524,6 +587,26 @@ Low Priority: ${issues.filter((i: Issue) => i.type === 'low').length}
             opacity: 1;
             transform: translateY(0);
           }
+        }
+        
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        
+        .analysis-hero-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 25px 80px rgba(102, 126, 234, 0.5), 0 0 60px rgba(118, 75, 162, 0.4) !important;
+        }
+        
+        .analysis-hero-card {
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
       `}</style>
     </div>

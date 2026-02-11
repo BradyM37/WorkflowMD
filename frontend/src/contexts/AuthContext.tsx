@@ -59,7 +59,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(userData);
         setIsAuthenticated(true);
         setSubscription('pro');
-        setLocationId(localStorage.getItem('location_id') || 'demo_location');
+        // Use stored email as location ID, fallback to user email
+        setLocationId(localStorage.getItem('location_id') || userData.email || 'demo_location');
         setIsLoading(false);
         return;
       }
@@ -94,6 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('user', JSON.stringify(mockUser));
       localStorage.setItem('auth_token', 'mock_jwt_token');
       localStorage.setItem('demo_mode', 'true');
+      localStorage.setItem('location_id', email); // Use email as location ID
       
       if (rememberMe) {
         localStorage.setItem('remember_me', 'true');
@@ -101,6 +103,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUser(mockUser);
       setIsAuthenticated(true);
+      setLocationId(email); // Set email as location ID
+      setSubscription('pro'); // Demo users get pro
       
       // In production, this would be:
       // const response = await api.post('/auth/login', { email, password, rememberMe });

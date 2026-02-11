@@ -13,13 +13,26 @@ import {
   EyeTwoTone
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { Title, Text, Paragraph } = Typography;
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login, locationId } = useAuth();
+  const { isDarkMode } = useTheme();
   const [loading, setLoading] = useState(false);
+
+  // Theme-aware colors
+  const colors = {
+    cardBg: isDarkMode ? '#262626' : '#ffffff',
+    featureCardBg: isDarkMode ? '#1f1f1f' : '#ffffff',
+    pricingBg: isDarkMode ? '#1a1a1a' : '#f0f2f5',
+    titleText: isDarkMode ? '#ffffff' : '#1a1a2e',
+    bodyText: isDarkMode ? '#d9d9d9' : '#4a4a5a',
+    mutedText: isDarkMode ? '#8c8c8c' : '#595959',
+    border: isDarkMode ? '#303030' : '#e8e8e8',
+  };
 
   const handleLogin = async (values: any) => {
     setLoading(true);
@@ -85,7 +98,7 @@ const Login: React.FC = () => {
                 WorkflowMD
               </Title>
               
-              <Paragraph style={{ fontSize: '20px', color: '#595959', marginBottom: '32px' }}>
+              <Paragraph style={{ fontSize: '20px', color: colors.mutedText, marginBottom: '32px' }}>
                 Find and fix workflow issues before they cost you revenue. 
                 Analyze your GoHighLevel workflows in seconds.
               </Paragraph>
@@ -97,7 +110,7 @@ const Login: React.FC = () => {
                     bordered={false}
                     hoverable
                     style={{ 
-                      background: '#f8f9fa',
+                      background: colors.featureCardBg,
                       borderLeft: '4px solid #667eea',
                       animation: `fadeInUp 0.6s ease ${0.2 + index * 0.1}s backwards`,
                       transition: 'all 0.3s ease'
@@ -106,11 +119,11 @@ const Login: React.FC = () => {
                     <Space align="start">
                       {feature.icon}
                       <div>
-                        <Text strong style={{ fontSize: '16px' }}>
+                        <Text strong style={{ fontSize: '16px', color: colors.titleText }}>
                           {feature.title}
                         </Text>
                         <br />
-                        <Text style={{ color: '#595959' }}>
+                        <Text style={{ color: colors.bodyText }}>
                           {feature.description}
                         </Text>
                       </div>
@@ -127,9 +140,10 @@ const Login: React.FC = () => {
               style={{ 
                 maxWidth: '450px',
                 margin: '0 auto',
-                boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
+                boxShadow: isDarkMode ? '0 10px 40px rgba(0,0,0,0.3)' : '0 10px 40px rgba(0,0,0,0.08)',
                 borderRadius: '12px',
-                border: 'none',
+                border: isDarkMode ? '1px solid #303030' : 'none',
+                background: colors.cardBg,
                 animation: 'fadeInUp 0.8s ease 0.2s backwards'
               }}
             >
@@ -150,10 +164,10 @@ const Login: React.FC = () => {
                     <ThunderboltOutlined style={{ fontSize: '36px', color: 'white' }} />
                   </div>
                   
-                  <Title level={3} style={{ marginBottom: '8px' }}>
+                  <Title level={3} style={{ marginBottom: '8px', color: colors.titleText }}>
                     Welcome Back
                   </Title>
-                  <Text style={{ color: '#595959' }}>
+                  <Text style={{ color: colors.mutedText }}>
                     Login to your account to continue
                   </Text>
                 </div>
@@ -228,7 +242,7 @@ const Login: React.FC = () => {
                   </Form.Item>
 
                   <div style={{ textAlign: 'center' }}>
-                    <Text style={{ color: '#595959' }}>
+                    <Text style={{ color: colors.mutedText }}>
                       Don't have an account?{' '}
                       <Link to="/register" style={{ color: '#667eea', fontWeight: 600 }}>
                         Register here
@@ -240,24 +254,24 @@ const Login: React.FC = () => {
                 <Divider />
 
                 {/* Pricing Info */}
-                <div style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px' }}>
+                <div style={{ background: colors.pricingBg, padding: '16px', borderRadius: '8px', border: `1px solid ${colors.border}` }}>
                   <Space direction="vertical" style={{ width: '100%' }}>
-                    <Text strong style={{ fontSize: '16px' }}>
+                    <Text strong style={{ fontSize: '16px', color: colors.titleText }}>
                       Pricing
                     </Text>
                     <div>
                       <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '8px' }} />
-                      <Text>Free: See 3 issues per analysis</Text>
+                      <Text style={{ color: colors.bodyText }}>Free: See 3 issues per analysis</Text>
                     </div>
                     <div>
                       <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '8px' }} />
-                      <Text>Pro ($297/mo): Unlimited analysis with full reports</Text>
+                      <Text style={{ color: colors.bodyText }}>Pro ($297/mo): Unlimited analysis with full reports</Text>
                     </div>
                   </Space>
                 </div>
 
                 <div style={{ textAlign: 'center' }}>
-                  <Text style={{ fontSize: '12px', color: '#8c8c8c' }}>
+                  <Text style={{ fontSize: '12px', color: colors.mutedText }}>
                     By logging in, you agree to our{' '}
                     <a href="/terms" style={{ color: '#667eea' }}>Terms of Service</a>
                     {' '}and{' '}

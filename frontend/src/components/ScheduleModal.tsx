@@ -192,35 +192,36 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({ visible, onClose, workflo
           style={{ marginBottom: '24px' }}
         />
 
-        <Form.Item
-          name="enabled"
-          valuePropName="checked"
-        >
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '16px',
-            background: '#f5f5f5',
-            borderRadius: '8px'
-          }}>
-            <div>
-              <Text strong style={{ display: 'block', fontSize: '16px' }}>
-                Enable Scheduled Scans
-              </Text>
-              <Text type="secondary" style={{ fontSize: '13px', color: '#595959' }}>
-                Automatically scan workflows on a regular schedule
-              </Text>
-            </div>
-            <Switch
-              checked={enabled}
-              onChange={setEnabled}
-              checkedChildren="ON"
-              unCheckedChildren="OFF"
-              size="default"
-            />
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '16px',
+          background: enabled ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)' : '#f5f5f5',
+          borderRadius: '8px',
+          border: enabled ? '2px solid #667eea' : '1px solid transparent',
+          transition: 'all 0.3s ease',
+          marginBottom: '16px'
+        }}>
+          <div>
+            <Text strong style={{ display: 'block', fontSize: '16px' }}>
+              Enable Scheduled Scans
+            </Text>
+            <Text type="secondary" style={{ fontSize: '13px', color: '#595959' }}>
+              Automatically scan workflows on a regular schedule
+            </Text>
           </div>
-        </Form.Item>
+          <Switch
+            checked={enabled}
+            onChange={(checked) => {
+              setEnabled(checked);
+              form.setFieldValue('enabled', checked);
+            }}
+            checkedChildren="ON"
+            unCheckedChildren="OFF"
+            size="default"
+          />
+        </div>
 
         <Divider />
 

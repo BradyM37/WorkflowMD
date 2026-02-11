@@ -40,17 +40,20 @@ import { StartTourButton } from '../components/OnboardingTour';
 import { toast } from '../utils/toast';
 import { useNavigate } from 'react-router-dom';
 import ScheduleModal from '../components/ScheduleModal';
+import { MOCK_WORKFLOWS } from '../mocks/mockData';
 import dayjs from 'dayjs';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 
 const Settings: React.FC = () => {
-  const { subscription, locationId } = useAuth();
+  const { subscription, locationId, user } = useAuth();
   const { isDarkMode, toggleDarkMode } = useTheme();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [scheduleModalVisible, setScheduleModalVisible] = useState(false);
+  const [slackConnecting, setSlackConnecting] = useState(false);
+  const [zapierConnecting, setZapierConnecting] = useState(false);
   const [settings, setSettings] = useState({
     emailNotifications: true,
     weeklyReports: true,
@@ -59,6 +62,9 @@ const Settings: React.FC = () => {
     language: 'en',
     timezone: 'America/New_York',
   });
+
+  // Use email as username (fallback to locationId for backwards compatibility)
+  const displayName = user?.email || user?.name || locationId || 'Demo User';
 
   // Get current schedule from localStorage
   const currentSchedule = JSON.parse(localStorage.getItem('scan_schedule') || 'null');
@@ -123,13 +129,13 @@ const Settings: React.FC = () => {
                     fontSize: '48px'
                   }}
                 >
-                  {locationId?.charAt(0).toUpperCase() || 'U'}
+                  {displayName.charAt(0).toUpperCase()}
                 </Avatar>
               </Badge>
               
               <div>
                 <Title level={4} style={{ margin: 0 }}>
-                  {locationId || 'Demo User'}
+                  {displayName}
                 </Title>
                 <Text type="secondary">
                   {subscription === 'pro' ? '⭐ Pro Member' : '🆓 Free Plan'}
@@ -749,9 +755,26 @@ const Settings: React.FC = () => {
                         <Text type="secondary" style={{ color: '#8c8c8c' }}>Get alerts in Slack</Text>
                       </div>
                     </Space>
-                    <Button disabled={subscription === 'free'}>
-                      {subscription === 'free' ? 'Pro Feature' : 'Connect'}
-                    </Button>
+                    {subscription === 'free' ? (
+                      <Button onClick={() => navigate('/pricing')}>
+                        Upgrade to Pro
+                      </Button>
+                    ) : (
+                      <Button 
+                        type="primary"
+                        loading={slackConnecting}
+                        onClick={() => {
+                          setSlackConnecting(true);
+                          // Simulate OAuth redirect
+                          setTimeout(() => {
+                            setSlackConnecting(false);
+                            toast.info('Slack OAuth coming soon! This will redirect you to authorize WorkflowMD in your Slack workspace.');
+                          }, 1000);
+                        }}
+                      >
+                        Connect
+                      </Button>
+                    )}
                   </div>
 
                   <div style={{ 
@@ -764,7 +787,7 @@ const Settings: React.FC = () => {
                   }}>
                     <Space>
                       <Avatar 
-                        style={{ background: '#52c41a' }}
+                        style={{ background: '#ff4a00' }}
                         size={48}
                       >
                         ZP
@@ -774,9 +797,25 @@ const Settings: React.FC = () => {
                         <Text type="secondary" style={{ color: '#8c8c8c' }}>Automate workflows</Text>
                       </div>
                     </Space>
-                    <Button disabled={subscription === 'free'}>
-                      {subscription === 'free' ? 'Pro Feature' : 'Connect'}
-                    </Button>
+                    {subscription === 'free' ? (
+                      <Button onClick={() => navigate('/pricing')}>
+                        Upgrade to Pro
+                      </Button>
+                    ) : (
+                      <Button 
+                        type="primary"
+                        loading={zapierConnecting}
+                        onClick={() => {
+                          setZapierConnecting(true);
+                          setTimeout(() => {
+                            setZapierConnecting(false);
+                            toast.info('Zapier integration coming soon! You\'ll be able to trigger Zaps when workflow issues are detected.');
+                          }, 1000);
+                        }}
+                      >
+                        Connect
+                      </Button>
+                    )}
                   </div>
                 </Space>
               </Card>
@@ -789,7 +828,7 @@ const Settings: React.FC = () => {
       <ScheduleModal
         visible={scheduleModalVisible}
         onClose={() => setScheduleModalVisible(false)}
-        workflows={[]}
+        workflows={MOCK_WORKFLOWS}
       />
     </div>
   );

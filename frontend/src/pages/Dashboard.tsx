@@ -23,6 +23,7 @@ import {
 } from '@ant-design/icons';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import LoadingState from '../components/LoadingState';
 import ScheduleModal from '../components/ScheduleModal';
 import ScanHistoryPanel from '../components/ScanHistoryPanel';
@@ -80,6 +81,7 @@ function saveHistory(newAnalysis: AnalysisHistory) {
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { subscription } = useAuth();
+  const { isDarkMode } = useTheme();
   const [analyzing, setAnalyzing] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -87,6 +89,14 @@ const Dashboard: React.FC = () => {
   const [localHistory, setLocalHistory] = useState<AnalysisHistory[]>(getSavedHistory());
   const [activeTab, setActiveTab] = useState('workflows');
   const [scheduleModalVisible, setScheduleModalVisible] = useState(false);
+
+  // Theme-aware colors
+  const colors = {
+    cardBg: isDarkMode ? '#262626' : 'white',
+    titleText: isDarkMode ? '#ffffff' : '#1a1a2e',
+    bodyText: isDarkMode ? '#d9d9d9' : '#595959',
+    mutedText: isDarkMode ? '#8c8c8c' : '#8c8c8c',
+  };
   
   // Get current schedule from localStorage
   const currentSchedule = JSON.parse(localStorage.getItem('scan_schedule') || 'null');
@@ -415,7 +425,9 @@ const Dashboard: React.FC = () => {
                       hoverable
                       style={{ 
                         height: '100%',
-                        background: analyzing === workflow.id ? 'rgba(102, 126, 234, 0.05)' : 'white'
+                        background: analyzing === workflow.id 
+                          ? (isDarkMode ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.05)') 
+                          : colors.cardBg
                       }}
                     >
                       <Card.Meta
@@ -434,7 +446,7 @@ const Dashboard: React.FC = () => {
                         title={
                           <Space direction="vertical" style={{ width: '100%' }}>
                             <Space>
-                              <Text strong style={{ fontSize: '16px' }}>{workflow.name}</Text>
+                              <Text strong style={{ fontSize: '16px', color: colors.titleText }}>{workflow.name}</Text>
                             </Space>
                             <Space>
                               <Tag color={workflow.status === 'active' ? 'success' : 'default'}>
@@ -448,11 +460,11 @@ const Dashboard: React.FC = () => {
                         }
                         description={
                           <Space direction="vertical" style={{ width: '100%' }}>
-                            <Text style={{ display: 'block', marginTop: '8px', color: '#595959' }}>
+                            <Text style={{ display: 'block', marginTop: '8px', color: colors.bodyText }}>
                               {workflow.description}
                             </Text>
                             {workflow.lastModified && (
-                              <Text type="secondary" style={{ fontSize: '12px' }}>
+                              <Text style={{ fontSize: '12px', color: colors.mutedText }}>
                                 <ClockCircleOutlined /> Updated: {workflow.lastModified}
                               </Text>
                             )}
@@ -464,7 +476,7 @@ const Dashboard: React.FC = () => {
                                   (Date.now() - new Date(lastScan.created_at).getTime()) / (1000 * 60 * 60)
                                 );
                                 return (
-                                  <Text type="secondary" style={{ fontSize: '12px', color: '#8c8c8c' }}>
+                                  <Text style={{ fontSize: '12px', color: colors.mutedText }}>
                                     <CheckCircleOutlined style={{ color: '#52c41a' }} /> Last scanned: {
                                       hoursAgo < 1 ? 'Less than 1 hour ago' :
                                       hoursAgo === 1 ? '1 hour ago' :
