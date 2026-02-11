@@ -127,7 +127,7 @@ export async function searchConversations(
       params.status = options.status;
     }
 
-    logger.info('Fetching conversations from GHL', { locationId, params });
+    logger.info('Fetching conversations from GHL', { locationId, limit: params.limit });
 
     const response = await axios.get(`${GHL_API_BASE}/conversations/search`, {
       headers: {
@@ -135,26 +135,45 @@ export async function searchConversations(
         'Version': '2021-07-28',
         'Accept': 'application/json'
       },
-      params
+      params,
+      timeout: 30000 // 30 second timeout
     });
 
-    logger.info('GHL conversations response', { 
+    const conversations = response.data.conversations || [];
+    
+    logger.info('GHL conversations fetched', { 
       locationId, 
-      count: response.data.conversations?.length,
-      total: response.data.total
+      count: conversations.length,
+      hasMore: !!response.data.nextCursor
     });
 
     return {
-      conversations: response.data.conversations || [],
+      conversations,
       nextCursor: response.data.nextCursor
     };
   } catch (error: any) {
+    const status = error.response?.status;
+    const errorData = error.response?.data;
+    
     logger.error('Fetch conversations error', {
       locationId,
-      status: error.response?.status,
-      data: error.response?.data
-    }, error);
-    throw error;
+      status,
+      errorMessage: errorData?.message || error.message,
+      errorCode: errorData?.code
+    });
+    
+    // Handle specific error cases
+    if (status === 401) {
+      throw new Error('GHL authentication failed. Please reconnect your account.');
+    }
+    if (status === 403) {
+      throw new Error('Missing conversations.readonly scope. Please update your GHL app permissions.');
+    }
+    if (status === 429) {
+      throw new Error('GHL rate limit exceeded. Please try again in a few minutes.');
+    }
+    
+    throw new Error(errorData?.message || 'Failed to fetch conversations from GHL');
   }
 }
 
