@@ -10,6 +10,7 @@ import { asyncHandler } from '../middleware/error-handler';
 import { logger } from '../lib/logger';
 import { pool } from '../lib/database';
 import { sendEmail } from '../lib/email-service';
+import { generateResponseReportPDF } from '../lib/response-report-pdf';
 
 const reportsRouter = Router();
 
@@ -329,6 +330,58 @@ reportsRouter.post(
       html,
       data: reportData
     });
+  })
+);
+
+/**
+ * GET /api/reports/pdf
+ * Generate and download a comprehensive PDF report
+ */
+reportsRouter.get(
+  '/pdf',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const days = parseInt(req.query.days as string) || 7;
+    
+    logger.info('Generating PDF report', { locationId, days, requestId: req.id });
+    
+    try {
+      // Generate the PDF
+      const pdfBuffer = await generateResponseReportPDF(locationId, days);
+      
+      // Get location name for filename
+      const locationResult = await pool.query(
+        'SELECT name FROM ghl_locations WHERE location_id = $1',
+        [locationId]
+      );
+      const locationName = locationResult.rows[0]?.name || 'Report';
+      const safeLocationName = locationName.replace(/[^a-zA-Z0-9]/g, '_');
+      
+      // Generate filename with date
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `Response_Report_${safeLocationName}_${days}days_${dateStr}.pdf`;
+      
+      // Set response headers for PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      
+      // Send the PDF
+      res.send(pdfBuffer);
+      
+      logger.info('PDF report generated successfully', { 
+        locationId, 
+        days, 
+        size: pdfBuffer.length,
+        requestId: req.id 
+      });
+      
+    } catch (error: any) {
+      logger.error('PDF generation failed', { locationId, days, requestId: req.id }, error);
+      return ApiResponse.error(res, 'Failed to generate PDF report', 500);
+    }
   })
 );
 

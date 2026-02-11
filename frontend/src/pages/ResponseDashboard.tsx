@@ -48,7 +48,8 @@ import {
   InfoCircleOutlined,
   LinkOutlined,
   SettingOutlined,
-  DownloadOutlined
+  DownloadOutlined,
+  FilePdfOutlined
 } from '@ant-design/icons';
 import { 
   LineChart, 
@@ -239,6 +240,7 @@ const ResponseDashboard: React.FC = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<{ id: string; ghlId: string } | null>(null);
   const [notifiedLeads, setNotifiedLeads] = useState<Set<string>>(new Set());
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   // Fetch sync status
   const { data: syncStatusData } = useQuery<{ data: SyncStatus }>(
@@ -734,6 +736,47 @@ const ResponseDashboard: React.FC = () => {
               icon={<DownloadOutlined />}
               onClick={() => {
                 window.open(`${api.defaults.baseURL}/api/metrics/export?days=${selectedDays}`, '_blank');
+              }}
+            />
+          </Tooltip>
+          <Tooltip title="Download PDF Report">
+            <Button 
+              icon={<FilePdfOutlined />}
+              loading={pdfLoading}
+              onClick={async () => {
+                setPdfLoading(true);
+                try {
+                  const response = await api.get(`/api/reports/pdf?days=${selectedDays}`, {
+                    responseType: 'blob'
+                  });
+                  
+                  // Create blob URL and trigger download
+                  const blob = new Blob([response.data], { type: 'application/pdf' });
+                  const url = window.URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  
+                  // Extract filename from Content-Disposition header or use default
+                  const contentDisposition = response.headers['content-disposition'];
+                  let filename = `Response_Report_${selectedDays}days.pdf`;
+                  if (contentDisposition) {
+                    const match = contentDisposition.match(/filename="(.+)"/);
+                    if (match) filename = match[1];
+                  }
+                  
+                  link.setAttribute('download', filename);
+                  document.body.appendChild(link);
+                  link.click();
+                  link.remove();
+                  window.URL.revokeObjectURL(url);
+                  
+                  toast.success('PDF report downloaded!');
+                } catch (error: any) {
+                  console.error('PDF download error:', error);
+                  toast.error(error.response?.data?.error?.message || 'Failed to generate PDF');
+                } finally {
+                  setPdfLoading(false);
+                }
               }}
             />
           </Tooltip>
