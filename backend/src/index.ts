@@ -45,6 +45,7 @@ import { testRouter } from './routes/test';
 import { monitoringRouter } from './routes/monitoring';
 import ghlSsoRouter from './routes/ghl-sso';
 import metricsRouter from './routes/metrics';
+import testConvRouter from './routes/test-conversations';
 
 // Load environment variables
 dotenv.config();
@@ -344,6 +345,7 @@ app.use('/', ghlSsoRouter);
 app.use('/api', tieredRateLimiter, apiRouter);
 app.use('/api/subscription', tieredRateLimiter, subscriptionRouter);
 app.use('/api/metrics', tieredRateLimiter, metricsRouter);
+app.use('/api/test-conv', testConvRouter); // TEMP: Remove after verifying API works
 app.use('/api', tieredRateLimiter, monitoringRouter);
 
 // Analysis endpoint gets its own stricter rate limit
