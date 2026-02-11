@@ -7,7 +7,7 @@ import { pool } from './database';
 import { logger } from './logger';
 import { syncConversations } from './response-analyzer';
 
-const SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+const SYNC_INTERVAL_MS = 60 * 1000; // 1 minute
 const MAX_CONCURRENT_SYNCS = 5;
 
 let isRunning = false;
@@ -25,7 +25,7 @@ async function getLocationsToSync(): Promise<string[]> {
       LEFT JOIN sync_state ss ON ot.location_id = ss.location_id
       WHERE ot.access_token IS NOT NULL
         AND (ss.sync_status IS NULL OR ss.sync_status != 'syncing')
-        AND (ss.last_sync_at IS NULL OR ss.last_sync_at < NOW() - INTERVAL '15 minutes')
+        AND (ss.last_sync_at IS NULL OR ss.last_sync_at < NOW() - INTERVAL '1 minute')
       ORDER BY ss.last_sync_at ASC NULLS FIRST
       LIMIT $1
     `, [MAX_CONCURRENT_SYNCS]);
