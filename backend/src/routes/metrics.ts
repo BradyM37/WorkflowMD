@@ -184,6 +184,69 @@ metricsRouter.get(
 );
 
 /**
+ * GET /api/metrics/conversation/:id
+ * Get full conversation details with messages
+ */
+metricsRouter.get(
+  '/conversation/:id',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const conversationId = req.params.id;
+    
+    logger.info('Fetching conversation detail', { locationId, conversationId, requestId: req.id });
+    
+    // Get conversation details
+    const convResult = await pool.query(`
+      SELECT 
+        id, ghl_conversation_id, contact_id, contact_name, 
+        contact_email, contact_phone, channel, 
+        first_inbound_at, first_response_at, response_time_seconds,
+        is_missed, assigned_user_id, assigned_user_name
+      FROM conversations
+      WHERE id = $1 AND location_id = $2
+    `, [conversationId, locationId]);
+    
+    if (convResult.rows.length === 0) {
+      return ApiResponse.error(res, 'Conversation not found', 404);
+    }
+    
+    const conversation = convResult.rows[0];
+    
+    // Get messages for this conversation
+    const msgResult = await pool.query(`
+      SELECT id, direction, body, date_added, message_type
+      FROM messages
+      WHERE conversation_id = $1
+      ORDER BY date_added ASC
+    `, [conversationId]);
+    
+    return ApiResponse.success(res, {
+      id: conversation.id,
+      ghlConversationId: conversation.ghl_conversation_id,
+      contactName: conversation.contact_name,
+      contactEmail: conversation.contact_email,
+      contactPhone: conversation.contact_phone,
+      channel: conversation.channel,
+      firstInboundAt: conversation.first_inbound_at,
+      firstResponseAt: conversation.first_response_at,
+      responseTimeSeconds: conversation.response_time_seconds,
+      isMissed: conversation.is_missed,
+      assignedUserId: conversation.assigned_user_id,
+      assignedUserName: conversation.assigned_user_name,
+      messages: msgResult.rows.map(msg => ({
+        id: msg.id,
+        direction: msg.direction,
+        body: msg.body,
+        dateAdded: msg.date_added,
+        messageType: msg.message_type
+      }))
+    });
+  })
+);
+
+/**
  * POST /api/metrics/sync
  * Trigger a manual sync of conversations from GHL
  */

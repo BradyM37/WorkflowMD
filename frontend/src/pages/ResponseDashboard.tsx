@@ -74,6 +74,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ResponseHeatmap from '../components/ResponseHeatmap';
 import PeriodComparison from '../components/PeriodComparison';
+import ConversationModal from '../components/ConversationModal';
 import './ResponseDashboard.css';
 
 const { Title, Text, Paragraph } = Typography;
@@ -136,6 +137,20 @@ interface SyncStatus {
   status: 'pending' | 'syncing' | 'completed' | 'error';
   lastSyncAt: string | null;
   error?: string;
+}
+
+interface SLAMetrics {
+  target: {
+    seconds: number;
+    formatted: string;
+  };
+  metrics: {
+    total: number;
+    metSla: number;
+    missedSla: number;
+    noResponse: number;
+    complianceRate: number;
+  };
 }
 
 // Helper functions
@@ -222,6 +237,8 @@ const ResponseDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [selectedDays, setSelectedDays] = useState<number>(7);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [selectedConversation, setSelectedConversation] = useState<{ id: string; ghlId: string } | null>(null);
+  const [notifiedLeads, setNotifiedLeads] = useState<Set<string>>(new Set());
 
   // Fetch sync status
   const { data: syncStatusData } = useQuery<{ data: SyncStatus }>(
@@ -271,6 +288,15 @@ const ResponseDashboard: React.FC = () => {
     { enabled: ghlConnected }
   );
 
+  // Fetch SLA metrics
+  const { data: slaData } = useQuery<{ data: SLAMetrics }>(
+    ['metrics-sla', selectedDays],
+    () => api.get(`/api/metrics/sla?days=${selectedDays}&target=300`).then(res => res.data),
+    { enabled: ghlConnected }
+  );
+
+  const slaMetrics = slaData?.data;
+
   // Sync mutation
   const syncMutation = useMutation(
     () => api.post('/api/metrics/sync'),
@@ -299,6 +325,43 @@ const ResponseDashboard: React.FC = () => {
       queryClient.invalidateQueries('metrics-channels');
     }
   }, [syncStatus?.status, queryClient]);
+
+  // Browser notifications for leads waiting >5 min
+  useEffect(() => {
+    if (!missed || missed.length === 0) return;
+
+    // Request notification permission on first load
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
+    // Check for leads waiting > 5 minutes
+    const fiveMinAgo = Date.now() - (5 * 60 * 1000);
+    const urgentLeads = missed.filter((lead: MissedConversation) => {
+      const waitingSince = new Date(lead.firstInboundAt).getTime();
+      return waitingSince < fiveMinAgo && !notifiedLeads.has(lead.id);
+    });
+
+    if (urgentLeads.length > 0 && Notification.permission === 'granted') {
+      // Notify about each new urgent lead
+      urgentLeads.forEach((lead: MissedConversation) => {
+        const waitTime = Math.floor((Date.now() - new Date(lead.firstInboundAt).getTime()) / 60000);
+        new Notification('🚨 Lead Waiting!', {
+          body: `${lead.contactName || 'A lead'} has been waiting ${waitTime}+ minutes on ${lead.channel?.toUpperCase()}`,
+          icon: '/logo192.png',
+          tag: lead.id, // Prevents duplicate notifications
+          requireInteraction: true
+        });
+      });
+
+      // Track notified leads to avoid re-notifying
+      setNotifiedLeads(prev => {
+        const updated = new Set(prev);
+        urgentLeads.forEach((lead: MissedConversation) => updated.add(lead.id));
+        return updated;
+      });
+    }
+  }, [missed, notifiedLeads]);
 
   // Show onboarding if no data
   useEffect(() => {
@@ -630,6 +693,13 @@ const ResponseDashboard: React.FC = () => {
     <div className="response-dashboard">
       <OnboardingModal />
       
+      {/* Conversation Detail Modal */}
+      <ConversationModal
+        conversationId={selectedConversation?.id || null}
+        ghlConversationId={selectedConversation?.ghlId || null}
+        onClose={() => setSelectedConversation(null)}
+      />
+      
       {/* Header */}
       <div className="dashboard-header">
         <div className="header-left">
@@ -772,6 +842,99 @@ const ResponseDashboard: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* SLA Compliance Card */}
+      {slaMetrics && (
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          <Col xs={24}>
+            <Card 
+              className="sla-card"
+              style={{
+                background: slaMetrics.metrics.complianceRate >= 95 
+                  ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)'
+                  : slaMetrics.metrics.complianceRate >= 80
+                  ? 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)'
+                  : 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+                border: 'none'
+              }}
+            >
+              <Row align="middle" gutter={[24, 16]}>
+                <Col xs={24} sm={12} md={8}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <div style={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: '50%',
+                      background: slaMetrics.metrics.complianceRate >= 95 ? '#22c55e' : slaMetrics.metrics.complianceRate >= 80 ? '#f59e0b' : '#ef4444',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontSize: 24,
+                      fontWeight: 700
+                    }}>
+                      {slaMetrics.metrics.complianceRate}%
+                    </div>
+                    <div>
+                      <Text strong style={{ fontSize: 18, display: 'block' }}>
+                        SLA Compliance
+                      </Text>
+                      <Text type="secondary">
+                        Target: {slaMetrics.target.formatted} response time
+                      </Text>
+                    </div>
+                  </div>
+                </Col>
+                <Col xs={24} sm={12} md={8}>
+                  <Progress
+                    percent={slaMetrics.metrics.complianceRate}
+                    strokeColor={
+                      slaMetrics.metrics.complianceRate >= 95 
+                        ? { '0%': '#22c55e', '100%': '#16a34a' }
+                        : slaMetrics.metrics.complianceRate >= 80
+                        ? { '0%': '#f59e0b', '100%': '#d97706' }
+                        : { '0%': '#ef4444', '100%': '#dc2626' }
+                    }
+                    trailColor="rgba(0,0,0,0.1)"
+                    strokeWidth={12}
+                    style={{ marginBottom: 8 }}
+                  />
+                  <Space split={<span style={{ color: '#d1d5db' }}>•</span>}>
+                    <Text type="success" strong>{slaMetrics.metrics.metSla} met</Text>
+                    <Text type="warning">{slaMetrics.metrics.missedSla} missed</Text>
+                    <Text type="secondary">{slaMetrics.metrics.noResponse} no response</Text>
+                  </Space>
+                </Col>
+                <Col xs={24} md={8} style={{ textAlign: 'right' }}>
+                  <div style={{
+                    background: 'rgba(255,255,255,0.8)',
+                    padding: '12px 16px',
+                    borderRadius: 8,
+                    display: 'inline-block'
+                  }}>
+                    {slaMetrics.metrics.complianceRate >= 95 ? (
+                      <>
+                        <CheckCircleOutlined style={{ color: '#22c55e', fontSize: 20, marginRight: 8 }} />
+                        <Text strong style={{ color: '#166534' }}>Excellent! Keep it up 🚀</Text>
+                      </>
+                    ) : slaMetrics.metrics.complianceRate >= 80 ? (
+                      <>
+                        <ExclamationCircleOutlined style={{ color: '#f59e0b', fontSize: 20, marginRight: 8 }} />
+                        <Text strong style={{ color: '#92400e' }}>Good, but room for improvement</Text>
+                      </>
+                    ) : (
+                      <>
+                        <WarningOutlined style={{ color: '#ef4444', fontSize: 20, marginRight: 8 }} />
+                        <Text strong style={{ color: '#991b1b' }}>Needs attention!</Text>
+                      </>
+                    )}
+                  </div>
+                </Col>
+              </Row>
+            </Card>
+          </Col>
+        </Row>
+      )}
 
       {/* Charts Row */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
@@ -935,8 +1098,12 @@ const ResponseDashboard: React.FC = () => {
                   pagination={{ pageSize: 10 }}
                   rowClassName={(record) => {
                     const waitTime = Date.now() - new Date(record.firstInboundAt).getTime();
-                    return waitTime > 3600000 ? 'urgent-row' : '';
+                    return `clickable-row ${waitTime > 3600000 ? 'urgent-row' : ''}`;
                   }}
+                  onRow={(record) => ({
+                    onClick: () => setSelectedConversation({ id: record.id, ghlId: record.ghlConversationId }),
+                    style: { cursor: 'pointer' }
+                  })}
                 />
               )
             },

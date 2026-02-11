@@ -135,6 +135,15 @@
 }
 
 /* Table Styles */
+.ant-table-row.clickable-row {
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.ant-table-row.clickable-row:hover {
+  background: rgba(102, 126, 234, 0.08) !important;
+}
+
 .ant-table-row.urgent-row {
   background: rgba(255, 77, 79, 0.05);
   animation: pulse-bg 2s infinite;
@@ -248,6 +257,52 @@
   .benchmarks-card .ant-col {
     text-align: left !important;
   }
+  
+  /* Heatmap horizontal scroll */
+  .heatmap-container,
+  .response-heatmap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .heatmap-container .recharts-wrapper,
+  .response-heatmap .recharts-wrapper {
+    min-width: 600px;
+  }
+  
+  /* Tables responsive */
+  .ant-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .ant-table {
+    min-width: 500px;
+  }
+  
+  /* Stack cards properly */
+  .main-stats .ant-col {
+    margin-bottom: 8px;
+  }
+  
+  /* Chart cards full width */
+  .chart-card {
+    margin-bottom: 16px;
+  }
+  
+  .chart-card .recharts-wrapper {
+    min-width: 100% !important;
+  }
+  
+  /* Tabs scrollable */
+  .tabs-card .ant-tabs-nav-list {
+    flex-wrap: nowrap;
+  }
+  
+  .tabs-card .ant-tabs-nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 @media (max-width: 480px) {
@@ -265,6 +320,54 @@
   
   .header-controls .ant-segmented {
     width: 100%;
+  }
+  
+  /* Single column for all cards */
+  .main-stats .ant-col {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  
+  /* Smaller table text */
+  .ant-table {
+    font-size: 12px;
+    min-width: 400px;
+  }
+  
+  .ant-table-thead > tr > th,
+  .ant-table-tbody > tr > td {
+    padding: 8px 6px;
+  }
+  
+  /* Hide less important columns on mobile */
+  .ant-table-thead > tr > th:nth-child(4),
+  .ant-table-tbody > tr > td:nth-child(4) {
+    display: none;
+  }
+  
+  /* Benchmarks compact */
+  .benchmarks-card {
+    padding: 8px;
+  }
+  
+  .benchmarks-card .ant-tag {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+  
+  /* Modal adjustments */
+  .ant-modal {
+    max-width: calc(100vw - 32px);
+    margin: 16px;
+  }
+  
+  .ant-modal-body {
+    padding: 16px;
+  }
+  
+  /* Timeline compact on mobile */
+  .ant-timeline-item-content {
+    margin-left: 16px;
   }
 }
 
