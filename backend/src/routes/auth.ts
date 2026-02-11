@@ -503,7 +503,7 @@ authRouter.get('/oauth/login', (_req, res) => {
     `response_type=code&` +
     `redirect_uri=${encodeURIComponent(redirectUri)}&` +
     `client_id=${clientId}&` +
-    `scope=workflows.readonly contacts.readonly`;
+    `scope=workflows.readonly locations.readonly`;
 
   res.redirect(authUrl);
 });
