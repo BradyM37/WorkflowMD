@@ -385,6 +385,16 @@ initDatabaseHealthMonitoring();
 // Setup process-level error handlers
 setupProcessErrorHandlers();
 
+// Run database migrations on startup
+(async () => {
+  try {
+    const { runMigrations } = await import('./lib/migrations');
+    await runMigrations();
+  } catch (error) {
+    logger.error('Failed to run migrations', {}, error as Error);
+  }
+})();
+
 // Initialize scan scheduler
 (async () => {
   try {
