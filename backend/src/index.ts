@@ -44,6 +44,7 @@ import { webhookRouter } from './routes/webhooks';
 import { testRouter } from './routes/test';
 import { monitoringRouter } from './routes/monitoring';
 import ghlSsoRouter from './routes/ghl-sso';
+import metricsRouter from './routes/metrics';
 
 // Load environment variables
 dotenv.config();
@@ -342,6 +343,7 @@ app.use('/', ghlSsoRouter);
 // API v1 routes (current version)
 app.use('/api', tieredRateLimiter, apiRouter);
 app.use('/api/subscription', tieredRateLimiter, subscriptionRouter);
+app.use('/api/metrics', tieredRateLimiter, metricsRouter);
 app.use('/api', tieredRateLimiter, monitoringRouter);
 
 // Analysis endpoint gets its own stricter rate limit
