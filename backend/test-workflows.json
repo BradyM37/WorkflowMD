@@ -1,0 +1,297 @@
+{
+  "workflows": [
+    {
+      "id": "test-workflow-1",
+      "name": "Infinite Loop Test",
+      "status": "active",
+      "nodes": [
+        {
+          "id": "trigger-1",
+          "type": "trigger",
+          "name": "Contact Created"
+        },
+        {
+          "id": "action-1",
+          "type": "email",
+          "name": "Send Welcome Email",
+          "config": {
+            "recipient": "test@example.com"
+          }
+        },
+        {
+          "id": "condition-1",
+          "type": "condition",
+          "name": "Check Status"
+        },
+        {
+          "id": "action-2",
+          "type": "wait",
+          "name": "Wait 1 day",
+          "config": {
+            "delay": "1d"
+          }
+        }
+      ],
+      "connections": [
+        { "from": "trigger-1", "to": "action-1" },
+        { "from": "action-1", "to": "condition-1" },
+        { "from": "condition-1", "to": "action-2", "branch": "yes" },
+        { "from": "action-2", "to": "condition-1" }
+      ]
+    },
+    {
+      "id": "test-workflow-2",
+      "name": "Critical Issues Test",
+      "status": "active",
+      "webhooks": [
+        {
+          "id": "webhook-1",
+          "name": "Local Webhook",
+          "url": "http://localhost:3000/api/callback"
+        }
+      ],
+      "actions": [
+        {
+          "id": "payment-1",
+          "type": "payment",
+          "name": "Charge Customer",
+          "config": {
+            "amount": 99.99
+          }
+        },
+        {
+          "id": "api-1",
+          "type": "api",
+          "name": "Call External API",
+          "config": {
+            "method": "POST"
+          }
+        },
+        {
+          "id": "webhook-action-1",
+          "type": "webhook",
+          "name": "Send to Localhost",
+          "config": {
+            "url": "http://127.0.0.1:8080/hook"
+          }
+        }
+      ]
+    },
+    {
+      "id": "test-workflow-3",
+      "name": "Error Handling Test",
+      "status": "published",
+      "actions": [
+        {
+          "id": "api-2",
+          "type": "api",
+          "name": "External API Call",
+          "config": {
+            "url": "https://api.example.com/data",
+            "method": "GET"
+          }
+        },
+        {
+          "id": "api-3",
+          "type": "webhook",
+          "name": "Another Webhook",
+          "config": {
+            "url": "https://hooks.example.com/webhook"
+          }
+        },
+        {
+          "id": "email-1",
+          "type": "email",
+          "name": "Send Email",
+          "config": {
+            "to": "hardcoded@email.com",
+            "subject": "Test"
+          }
+        },
+        {
+          "id": "sms-1",
+          "type": "sms",
+          "name": "Send SMS",
+          "config": {
+            "to": "+15551234567",
+            "message": "Test"
+          }
+        }
+      ]
+    },
+    {
+      "id": "test-workflow-4",
+      "name": "Best Practices Test",
+      "status": "draft",
+      "actions": [
+        {
+          "id": "action-desc-1",
+          "type": "email",
+          "name": "Email 1"
+        },
+        {
+          "id": "action-desc-2",
+          "type": "sms",
+          "name": "SMS 1"
+        },
+        {
+          "id": "api-deprecated",
+          "type": "api",
+          "name": "Legacy API",
+          "config": {
+            "url": "https://api.example.com/v1/users",
+            "apiVersion": "v1"
+          }
+        },
+        {
+          "id": "integration-1",
+          "type": "integration",
+          "name": "Broken Integration",
+          "config": {}
+        }
+      ]
+    },
+    {
+      "id": "test-workflow-5",
+      "name": "Complex Workflow",
+      "status": "active",
+      "nodes": [
+        {
+          "id": "trigger-complex",
+          "type": "trigger",
+          "name": "Form Submit"
+        },
+        {
+          "id": "step-1",
+          "type": "action",
+          "name": "Step 1"
+        },
+        {
+          "id": "step-2",
+          "type": "action",
+          "name": "Step 2"
+        },
+        {
+          "id": "step-3",
+          "type": "action",
+          "name": "Step 3"
+        },
+        {
+          "id": "step-4",
+          "type": "action",
+          "name": "Step 4"
+        },
+        {
+          "id": "step-5",
+          "type": "action",
+          "name": "Step 5"
+        },
+        {
+          "id": "step-6",
+          "type": "action",
+          "name": "Step 6"
+        },
+        {
+          "id": "step-7",
+          "type": "action",
+          "name": "Step 7"
+        },
+        {
+          "id": "step-8",
+          "type": "action",
+          "name": "Step 8"
+        },
+        {
+          "id": "step-9",
+          "type": "action",
+          "name": "Step 9"
+        },
+        {
+          "id": "step-10",
+          "type": "action",
+          "name": "Step 10"
+        },
+        {
+          "id": "step-11",
+          "type": "action",
+          "name": "Step 11"
+        },
+        {
+          "id": "step-12",
+          "type": "action",
+          "name": "Step 12"
+        }
+      ],
+      "connections": [
+        { "from": "trigger-complex", "to": "step-1" },
+        { "from": "step-1", "to": "step-2" },
+        { "from": "step-2", "to": "step-3" },
+        { "from": "step-3", "to": "step-4" },
+        { "from": "step-4", "to": "step-5" },
+        { "from": "step-5", "to": "step-6" },
+        { "from": "step-6", "to": "step-7" },
+        { "from": "step-7", "to": "step-8" },
+        { "from": "step-8", "to": "step-9" },
+        { "from": "step-9", "to": "step-10" },
+        { "from": "step-10", "to": "step-11" },
+        { "from": "step-11", "to": "step-12" }
+      ]
+    },
+    {
+      "id": "test-workflow-6",
+      "name": "Perfect Workflow",
+      "status": "active",
+      "nodes": [
+        {
+          "id": "trigger-perfect",
+          "type": "trigger",
+          "name": "Contact Tag Added",
+          "config": {
+            "tag": "new-lead"
+          }
+        },
+        {
+          "id": "delay-1",
+          "type": "delay",
+          "name": "Wait 5 minutes",
+          "config": {
+            "delay": "5m"
+          }
+        },
+        {
+          "id": "email-perfect",
+          "type": "email",
+          "name": "Send Welcome Email",
+          "description": "Sends a personalized welcome email to new leads",
+          "config": {
+            "to": "{{contact.email}}",
+            "subject": "Welcome!",
+            "template": "welcome-template"
+          }
+        },
+        {
+          "id": "condition-perfect",
+          "type": "condition",
+          "name": "Check Email Opened",
+          "description": "Wait for email open event"
+        },
+        {
+          "id": "sms-perfect",
+          "type": "sms",
+          "name": "Follow-up SMS",
+          "description": "Send SMS if email is not opened",
+          "config": {
+            "to": "{{contact.phone}}",
+            "message": "Hello {{contact.firstName}}!"
+          }
+        }
+      ],
+      "connections": [
+        { "from": "trigger-perfect", "to": "delay-1" },
+        { "from": "delay-1", "to": "email-perfect" },
+        { "from": "email-perfect", "to": "condition-perfect" },
+        { "from": "condition-perfect", "to": "sms-perfect", "branch": "no" }
+      ]
+    }
+  ]
+}

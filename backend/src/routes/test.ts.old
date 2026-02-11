@@ -1,0 +1,196 @@
+import { Router } from 'express';
+import { pool } from '../lib/database';
+import { analyzeWorkflow } from '../lib/analysis-engine';
+
+export const testRouter = Router();
+
+// Mock workflow templates for testing (using correct structure for analysis engine)
+const MOCK_WORKFLOWS = {
+  // A workflow with critical issues (should score low)
+  critical: {
+    id: 'mock_critical_001',
+    name: 'Broken Payment Flow',
+    status: 'active',
+    triggers: [
+      { id: 'trigger_1', type: 'payment_received', config: {} }
+    ],
+    actions: [
+      { id: 'action_1', type: 'webhook', config: { url: 'http://localhost/webhook' } }, // localhost = bad
+      { id: 'action_2', type: 'email', config: {} }, // missing recipient = bad
+      { id: 'action_3', type: 'api_call', config: { url: 'https://api.example.com' } }, // no error handling
+      { id: 'action_4', type: 'payment', config: {} }, // no retry logic = bad
+      { id: 'action_5', type: 'sms', config: {} } // missing phone = bad
+    ],
+    webhooks: [
+      { id: 'wh_1', url: 'http://localhost:3000/hook' } // localhost webhook
+    ],
+    connections: [
+      { from: 'trigger_1', to: 'action_1' },
+      { from: 'action_1', to: 'action_2' },
+      { from: 'action_2', to: 'action_3' },
+      { from: 'action_3', to: 'action_4' },
+      { from: 'action_4', to: 'action_5' },
+      { from: 'action_5', to: 'action_1' } // Creates infinite loop!
+    ],
+    estimatedContacts: 5000
+  },
+
+  // A workflow with some issues (should score medium)
+  medium: {
+    id: 'mock_medium_001',
+    name: 'Lead Nurture Sequence',
+    status: 'active',
+    triggers: [
+      { id: 'trigger_1', type: 'form_submitted', config: {} },
+      { id: 'trigger_2', type: 'tag_added', config: { tag: 'lead' } } // Multiple triggers = potential conflict
+    ],
+    actions: [
+      { id: 'action_1', type: 'wait', config: { duration: '2 hours' } },
+      { id: 'action_2', type: 'email', config: { recipient: '{{contact.email}}', templateId: 'welcome' } },
+      { id: 'action_3', type: 'api_call', config: { url: 'https://api.example.com' } }, // no error handling
+      { id: 'action_4', type: 'sms', config: {} }, // missing phone
+      { id: 'action_5', type: 'wait', config: { duration: '10 days' } } // excessive wait time
+    ],
+    connections: [
+      { from: 'trigger_1', to: 'action_1' },
+      { from: 'trigger_2', to: 'action_1' },
+      { from: 'action_1', to: 'action_2' },
+      { from: 'action_2', to: 'action_3' },
+      { from: 'action_3', to: 'action_4' },
+      { from: 'action_4', to: 'action_5' }
+    ],
+    estimatedContacts: 500
+  },
+
+  // A clean workflow (should score high)
+  healthy: {
+    id: 'mock_healthy_001',
+    name: 'Simple Welcome Email',
+    status: 'draft', // Not active = less risky
+    triggers: [
+      { id: 'trigger_1', type: 'contact_created', config: {} }
+    ],
+    actions: [
+      { id: 'action_1', type: 'condition', config: { field: 'email', operator: 'exists' } },
+      { id: 'action_2', type: 'email', config: { 
+        recipient: '{{contact.email}}', 
+        templateId: 'welcome',
+        errorHandling: true // Has error handling
+      }},
+      { id: 'action_3', type: 'add_tag', config: { tag: 'welcomed' } }
+    ],
+    connections: [
+      { from: 'trigger_1', to: 'action_1' },
+      { from: 'action_1', to: 'action_2' },
+      { from: 'action_2', to: 'action_3' }
+    ],
+    estimatedContacts: 100
+  }
+};
+
+// Test endpoint - analyze a mock workflow
+testRouter.post('/analyze', async (req, res) => {
+  try {
+    const { workflowType, customWorkflow } = req.body;
+    
+    // Use custom workflow if provided, otherwise use a template
+    let workflow;
+    if (customWorkflow) {
+      workflow = customWorkflow;
+    } else if (workflowType && MOCK_WORKFLOWS[workflowType as keyof typeof MOCK_WORKFLOWS]) {
+      workflow = MOCK_WORKFLOWS[workflowType as keyof typeof MOCK_WORKFLOWS];
+    } else {
+      return res.status(400).json({ 
+        error: 'Provide workflowType (critical/medium/healthy) or customWorkflow',
+        availableTypes: Object.keys(MOCK_WORKFLOWS)
+      });
+    }
+
+    // Run the REAL analysis engine
+    const analysis = analyzeWorkflow(workflow);
+
+    // Optionally save to database for testing
+    const locationId = req.body.locationId || 'loc_test_123';
+    
+    await pool.query(
+      `INSERT INTO analysis_results 
+       (location_id, workflow_id, workflow_name, health_score, issues_found, results) 
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id`,
+      [
+        locationId,
+        workflow.id,
+        workflow.name,
+        analysis.healthScore,
+        analysis.issues.length,
+        JSON.stringify(analysis)
+      ]
+    );
+
+    res.json({
+      success: true,
+      workflow: {
+        id: workflow.id,
+        name: workflow.name
+      },
+      analysis
+    });
+
+  } catch (error: any) {
+    console.error('Test analysis error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get available mock workflow types
+testRouter.get('/workflows', (_req, res) => {
+  const workflows = Object.entries(MOCK_WORKFLOWS).map(([type, workflow]: [string, any]) => ({
+    type,
+    id: workflow.id,
+    name: workflow.name,
+    actionCount: workflow.actions?.length || 0,
+    connectionCount: workflow.connections?.length || 0,
+    isActive: workflow.status === 'active',
+    contactCount: workflow.estimatedContacts || 0
+  }));
+
+  res.json({ workflows });
+});
+
+// Get analysis history
+testRouter.get('/history', async (req, res) => {
+  try {
+    const locationId = req.query.locationId || 'loc_test_123';
+    
+    const result = await pool.query(
+      `SELECT id, workflow_id, workflow_name, health_score, issues_found, created_at, results
+       FROM analysis_results 
+       WHERE location_id = $1 
+       ORDER BY created_at DESC 
+       LIMIT 20`,
+      [locationId]
+    );
+
+    res.json({ history: result.rows });
+  } catch (error: any) {
+    console.error('Error fetching test history:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Clear test data
+testRouter.delete('/history', async (req, res) => {
+  try {
+    const locationId = req.query.locationId || 'loc_test_123';
+    
+    await pool.query(
+      'DELETE FROM analysis_results WHERE location_id = $1',
+      [locationId]
+    );
+
+    res.json({ success: true, message: 'Test history cleared' });
+  } catch (error: any) {
+    console.error('Error clearing test history:', error);
+    res.status(500).json({ error: error.message });
+  }
+});

@@ -1,0 +1,115 @@
+.workflow-analysis-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f9fafb;
+}
+
+.analysis-layout {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+.graph-panel {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.analysis-panel {
+  width: 400px;
+  background: white;
+  border-left: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-header h3 {
+  margin: 0;
+}
+
+.analysis-section {
+  padding: 16px;
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+}
+
+.score-card {
+  text-align: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.score-card h2,
+.score-card .ant-typography {
+  color: white !important;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Issue Breakdown Styling */
+.issue-breakdown-item {
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border-left: 3px solid #e5e7eb;
+  transition: all 0.2s;
+}
+
+.issue-breakdown-item:hover {
+  background: #f3f4f6;
+  border-left-color: #3b82f6;
+  transform: translateX(4px);
+}
+
+/* Progress Timeline */
+.progress-timeline {
+  margin-top: 8px;
+}
+
+.progress-entry {
+  transition: all 0.2s;
+}
+
+.progress-entry:hover {
+  background: #f9fafb !important;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+  .analysis-panel {
+    width: 350px;
+  }
+}
+
+@media (max-width: 768px) {
+  .analysis-layout {
+    flex-direction: column;
+  }
+
+  .graph-panel {
+    height: 60%;
+  }
+
+  .analysis-panel {
+    width: 100%;
+    height: 40%;
+    border-left: none;
+    border-top: 1px solid #e5e7eb;
+  }
+}

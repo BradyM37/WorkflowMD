@@ -1,0 +1,94 @@
+import { Router } from 'express';
+import axios from 'axios';
+import { pool } from '../lib/database';
+import { encrypt, decrypt } from '../lib/encryption';
+
+export const authRouter = Router();
+
+// OAuth callback handler
+authRouter.get('/callback', async (req, res) => {
+  try {
+    const { code } = req.query;
+    
+    if (!code) {
+      return res.status(400).json({ error: 'No authorization code provided' });
+    }
+
+    // Exchange code for tokens
+    const tokenResponse = await axios.post('https://services.leadconnectorhq.com/oauth/token', {
+      client_id: process.env.GHL_CLIENT_ID,
+      client_secret: process.env.GHL_CLIENT_SECRET,
+      grant_type: 'authorization_code',
+      code: code as string,
+      user_type: 'Location',
+      redirect_uri: process.env.REDIRECT_URI
+    });
+
+    const tokens = tokenResponse.data;
+
+    // Store encrypted tokens in database
+    await pool.query(
+      `INSERT INTO oauth_tokens 
+       (location_id, company_id, access_token, refresh_token, expires_at) 
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (location_id) 
+       DO UPDATE SET 
+         access_token = $3, 
+         refresh_token = $4,
+         expires_at = $5,
+         updated_at = NOW()`,
+      [
+        tokens.locationId,
+        tokens.companyId,
+        encrypt(tokens.access_token),
+        encrypt(tokens.refresh_token),
+        new Date(Date.now() + tokens.expires_in * 1000)
+      ]
+    );
+
+    // Set session cookie
+    res.cookie('location_id', tokens.locationId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
+
+    // Redirect to dashboard
+    res.redirect(process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/dashboard` : '/dashboard');
+    
+  } catch (error: any) {
+    console.error('OAuth callback error:', error.response?.data || error.message);
+    res.redirect(`${process.env.FRONTEND_URL}/error?message=authentication_failed`);
+  }
+});
+
+// Logout endpoint
+authRouter.post('/logout', (req, res) => {
+  res.clearCookie('location_id');
+  res.json({ success: true });
+});
+
+// Check authentication status
+authRouter.get('/status', async (req, res) => {
+  const locationId = req.cookies.location_id;
+  
+  if (!locationId) {
+    return res.json({ authenticated: false });
+  }
+
+  const result = await pool.query(
+    'SELECT subscription_status FROM oauth_tokens WHERE location_id = $1',
+    [locationId]
+  );
+
+  if (result.rows.length === 0) {
+    return res.json({ authenticated: false });
+  }
+
+  res.json({
+    authenticated: true,
+    locationId,
+    subscription: result.rows[0].subscription_status
+  });
+});

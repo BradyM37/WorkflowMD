@@ -1,0 +1,332 @@
+{
+  "id": "a1b2c3d4-e5f6-4789-abcd-1234567890ab",
+  "name": "Complex Lead Nurture Campaign",
+  "status": "active",
+  "version": 3,
+  "createdAt": "2024-02-01T14:20:00.000Z",
+  "updatedAt": "2024-02-10T09:15:00.000Z",
+  "locationId": "eBG6WapS3v4ZqwA45MTxtYJ",
+  "triggers": [
+    {
+      "id": "trigger-form-submit",
+      "type": "FormSubmitted",
+      "name": "Lead Form Submitted",
+      "description": "Triggers when contact form is submitted",
+      "config": {
+        "formId": "form-lead-capture-2024"
+      }
+    },
+    {
+      "id": "trigger-tag-added",
+      "type": "TagAdded",
+      "name": "Hot Lead Tag Added",
+      "description": "Triggers when hot-lead tag is added",
+      "config": {
+        "tag": "hot-lead"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "action-delay-1",
+      "type": "Wait",
+      "name": "Wait 2 minutes",
+      "description": "Short delay before initial email",
+      "config": {
+        "delay": "2m",
+        "unit": "minutes"
+      }
+    },
+    {
+      "id": "action-send-email-1",
+      "type": "SendEmail",
+      "name": "Send Initial Email",
+      "description": "First touchpoint email",
+      "config": {
+        "recipient": "{{contact.email}}",
+        "subject": "Thanks for your interest!",
+        "template": "lead-nurture-1"
+      }
+    },
+    {
+      "id": "condition-email-opened",
+      "type": "IfElse",
+      "name": "Check if Email Opened",
+      "description": "Branch based on email engagement",
+      "config": {
+        "condition": "email.opened",
+        "waitTime": "24h"
+      }
+    },
+    {
+      "id": "action-send-sms-1",
+      "type": "SendSMS",
+      "name": "Follow-up SMS",
+      "description": "SMS if email not opened",
+      "config": {
+        "recipient": "{{contact.phone}}",
+        "message": "Hi {{contact.firstName}}! We'd love to connect."
+      }
+    },
+    {
+      "id": "action-webhook-1",
+      "type": "CustomWebhook",
+      "name": "Send to CRM",
+      "description": "Sync lead data to external CRM",
+      "config": {
+        "url": "https://api.crm-system.com/v2/leads",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer {{env.CRM_API_KEY}}",
+          "Content-Type": "application/json"
+        },
+        "timeout": 30000,
+        "retryCount": 3
+      }
+    },
+    {
+      "id": "action-add-to-campaign",
+      "type": "AddToCampaign",
+      "name": "Add to Nurture Campaign",
+      "description": "Add to email nurture sequence",
+      "config": {
+        "campaignId": "campaign-nurture-2024"
+      }
+    },
+    {
+      "id": "condition-lead-score",
+      "type": "IfElse",
+      "name": "Check Lead Score",
+      "description": "Branch based on lead score",
+      "config": {
+        "condition": "contact.leadScore >= 50"
+      }
+    },
+    {
+      "id": "action-assign-user",
+      "type": "AssignToUser",
+      "name": "Assign to Sales Rep",
+      "description": "Assign high-score leads to sales",
+      "config": {
+        "userId": "user-sales-team-1"
+      }
+    },
+    {
+      "id": "action-create-task",
+      "type": "CreateTask",
+      "name": "Create Follow-up Task",
+      "description": "Task for sales rep",
+      "config": {
+        "title": "Follow up with {{contact.firstName}}",
+        "dueDate": "+2d",
+        "assignedTo": "user-sales-team-1"
+      }
+    },
+    {
+      "id": "action-webhook-2",
+      "type": "CustomWebhook",
+      "name": "Log to Analytics",
+      "description": "Track conversion event",
+      "config": {
+        "url": "https://analytics.company.com/api/events",
+        "method": "POST",
+        "headers": {
+          "X-API-Key": "{{env.ANALYTICS_KEY}}"
+        },
+        "timeout": 15000
+      }
+    },
+    {
+      "id": "action-delay-2",
+      "type": "Wait",
+      "name": "Wait 3 days",
+      "description": "Delay before second email",
+      "config": {
+        "delay": "3d",
+        "unit": "days"
+      }
+    },
+    {
+      "id": "action-send-email-2",
+      "type": "SendEmail",
+      "name": "Send Follow-up Email",
+      "description": "Second touchpoint",
+      "config": {
+        "recipient": "{{contact.email}}",
+        "subject": "Following up on your interest",
+        "template": "lead-nurture-2"
+      }
+    },
+    {
+      "id": "condition-form-submitted",
+      "type": "IfElse",
+      "name": "Check Form Response",
+      "description": "Check if they filled another form",
+      "config": {
+        "condition": "form.submitted",
+        "formId": "form-demo-request"
+      }
+    },
+    {
+      "id": "action-create-opportunity",
+      "type": "CreateOpportunity",
+      "name": "Create Sales Opportunity",
+      "description": "Create opp in pipeline",
+      "config": {
+        "pipelineId": "pipeline-sales-2024",
+        "stage": "qualified-lead",
+        "value": 5000
+      }
+    },
+    {
+      "id": "action-send-notification",
+      "type": "SendNotification",
+      "name": "Notify Sales Team",
+      "description": "Internal notification",
+      "config": {
+        "recipients": ["sales@company.com"],
+        "message": "New qualified lead: {{contact.fullName}}"
+      }
+    },
+    {
+      "id": "action-update-field",
+      "type": "UpdateContact",
+      "name": "Update Lead Status",
+      "description": "Mark as qualified",
+      "config": {
+        "fields": {
+          "leadStatus": "qualified",
+          "lastTouchedDate": "{{now}}"
+        }
+      }
+    }
+  ],
+  "webhooks": [
+    {
+      "id": "webhook-crm-sync",
+      "name": "CRM Integration",
+      "url": "https://api.crm-system.com/v2/leads",
+      "method": "POST",
+      "timeout": 30000
+    },
+    {
+      "id": "webhook-analytics",
+      "name": "Analytics Tracking",
+      "url": "https://analytics.company.com/api/events",
+      "method": "POST",
+      "timeout": 15000
+    }
+  ],
+  "nodes": [
+    {
+      "id": "trigger-form-submit",
+      "type": "trigger",
+      "name": "Lead Form Submitted"
+    },
+    {
+      "id": "trigger-tag-added",
+      "type": "trigger",
+      "name": "Hot Lead Tag Added"
+    },
+    {
+      "id": "action-delay-1",
+      "type": "action",
+      "name": "Wait 2 minutes"
+    },
+    {
+      "id": "action-send-email-1",
+      "type": "action",
+      "name": "Send Initial Email"
+    },
+    {
+      "id": "condition-email-opened",
+      "type": "condition",
+      "name": "Check if Email Opened"
+    },
+    {
+      "id": "action-send-sms-1",
+      "type": "action",
+      "name": "Follow-up SMS"
+    },
+    {
+      "id": "action-webhook-1",
+      "type": "action",
+      "name": "Send to CRM"
+    },
+    {
+      "id": "action-add-to-campaign",
+      "type": "action",
+      "name": "Add to Nurture Campaign"
+    },
+    {
+      "id": "condition-lead-score",
+      "type": "condition",
+      "name": "Check Lead Score"
+    },
+    {
+      "id": "action-assign-user",
+      "type": "action",
+      "name": "Assign to Sales Rep"
+    },
+    {
+      "id": "action-create-task",
+      "type": "action",
+      "name": "Create Follow-up Task"
+    },
+    {
+      "id": "action-webhook-2",
+      "type": "action",
+      "name": "Log to Analytics"
+    },
+    {
+      "id": "action-delay-2",
+      "type": "action",
+      "name": "Wait 3 days"
+    },
+    {
+      "id": "action-send-email-2",
+      "type": "action",
+      "name": "Send Follow-up Email"
+    },
+    {
+      "id": "condition-form-submitted",
+      "type": "condition",
+      "name": "Check Form Response"
+    },
+    {
+      "id": "action-create-opportunity",
+      "type": "action",
+      "name": "Create Sales Opportunity"
+    },
+    {
+      "id": "action-send-notification",
+      "type": "action",
+      "name": "Notify Sales Team"
+    },
+    {
+      "id": "action-update-field",
+      "type": "action",
+      "name": "Update Lead Status"
+    }
+  ],
+  "connections": [
+    {"from": "trigger-form-submit", "to": "action-delay-1"},
+    {"from": "trigger-tag-added", "to": "action-send-email-1"},
+    {"from": "action-delay-1", "to": "action-send-email-1"},
+    {"from": "action-send-email-1", "to": "condition-email-opened"},
+    {"from": "condition-email-opened", "to": "action-send-sms-1", "branch": "no"},
+    {"from": "condition-email-opened", "to": "action-webhook-1", "branch": "yes"},
+    {"from": "action-send-sms-1", "to": "action-add-to-campaign"},
+    {"from": "action-webhook-1", "to": "condition-lead-score"},
+    {"from": "action-add-to-campaign", "to": "action-delay-2"},
+    {"from": "condition-lead-score", "to": "action-assign-user", "branch": "yes"},
+    {"from": "condition-lead-score", "to": "action-delay-2", "branch": "no"},
+    {"from": "action-assign-user", "to": "action-create-task"},
+    {"from": "action-create-task", "to": "action-webhook-2"},
+    {"from": "action-delay-2", "to": "action-send-email-2"},
+    {"from": "action-send-email-2", "to": "condition-form-submitted"},
+    {"from": "condition-form-submitted", "to": "action-create-opportunity", "branch": "yes"},
+    {"from": "action-create-opportunity", "to": "action-send-notification"},
+    {"from": "action-send-notification", "to": "action-update-field"}
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "id": "78559bb3-b920-461e-b010-7b2a2816d2a9",
+  "name": "Simple Welcome Workflow",
+  "status": "active",
+  "version": 2,
+  "createdAt": "2024-01-15T10:30:00.000Z",
+  "updatedAt": "2024-01-15T10:30:00.000Z",
+  "locationId": "eBG6WapS3v4ZqwA45MTxtYJ",
+  "triggers": [
+    {
+      "id": "trigger-contact-created",
+      "type": "ContactCreated",
+      "name": "Contact Created",
+      "description": "Triggers when a new contact is added",
+      "config": {}
+    }
+  ],
+  "actions": [
+    {
+      "id": "action-send-email-1",
+      "type": "SendEmail",
+      "name": "Send Welcome Email",
+      "description": "Send a welcome email to the new contact",
+      "config": {
+        "recipient": "{{contact.email}}",
+        "subject": "Welcome to our community!",
+        "body": "Hi {{contact.firstName}}, welcome aboard!",
+        "template": "welcome-email-v2",
+        "validateEmail": true
+      }
+    },
+    {
+      "id": "action-add-tag-1",
+      "type": "AddTag",
+      "name": "Add New Lead Tag",
+      "description": "Tag contact as new lead",
+      "config": {
+        "tags": ["new-lead", "needs-follow-up"]
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "trigger-contact-created",
+      "type": "trigger",
+      "name": "Contact Created"
+    },
+    {
+      "id": "action-send-email-1",
+      "type": "action",
+      "name": "Send Welcome Email"
+    },
+    {
+      "id": "action-add-tag-1",
+      "type": "action",
+      "name": "Add New Lead Tag"
+    }
+  ],
+  "connections": [
+    {
+      "from": "trigger-contact-created",
+      "to": "action-send-email-1"
+    },
+    {
+      "from": "action-send-email-1",
+      "to": "action-add-tag-1"
+    }
+  ]
+}

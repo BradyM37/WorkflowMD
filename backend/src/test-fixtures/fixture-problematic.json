@@ -1,0 +1,272 @@
+{
+  "id": "bad-workflow-123",
+  "name": "Problematic Workflow with Issues",
+  "status": "active",
+  "version": 1,
+  "createdAt": "2024-01-01T08:00:00.000Z",
+  "updatedAt": "2024-01-01T08:00:00.000Z",
+  "locationId": "eBG6WapS3v4ZqwA45MTxtYJ",
+  "estimatedContacts": 5000,
+  "triggers": [
+    {
+      "id": "trigger-contact-updated",
+      "type": "ContactUpdated",
+      "name": "Contact Updated",
+      "config": {
+        "field": "any"
+      }
+    },
+    {
+      "id": "trigger-tag-added-conflict",
+      "type": "TagAdded",
+      "name": "Tag Added (Conflict)",
+      "config": {
+        "tag": "customer"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "action-email-missing-recipient",
+      "type": "SendEmail",
+      "name": "Send Email",
+      "config": {
+        "subject": "Important Update",
+        "body": "This email has no recipient!"
+      }
+    },
+    {
+      "id": "action-sms-missing-phone",
+      "type": "SendSMS",
+      "name": "Send SMS",
+      "config": {
+        "message": "This SMS has no phone number!"
+      }
+    },
+    {
+      "id": "action-webhook-localhost",
+      "type": "CustomWebhook",
+      "name": "Localhost Webhook",
+      "description": "This points to localhost!",
+      "config": {
+        "url": "http://localhost:3000/webhook",
+        "method": "POST"
+      }
+    },
+    {
+      "id": "action-webhook-127",
+      "type": "CustomWebhook",
+      "name": "Another Local Webhook",
+      "config": {
+        "url": "http://127.0.0.1:8080/api/callback",
+        "method": "POST"
+      }
+    },
+    {
+      "id": "action-payment-no-retry",
+      "type": "ChargeCustomer",
+      "name": "Charge Payment",
+      "description": "No retry logic configured",
+      "config": {
+        "amount": 99.99,
+        "currency": "USD"
+      }
+    },
+    {
+      "id": "action-api-no-error-handling",
+      "type": "CustomWebhook",
+      "name": "API Call No Error Handling",
+      "config": {
+        "url": "https://api.external-service.com/data",
+        "method": "GET"
+      }
+    },
+    {
+      "id": "action-wait-excessive",
+      "type": "Wait",
+      "name": "Wait 45 days",
+      "description": "Excessively long wait time",
+      "config": {
+        "delay": "45d",
+        "unit": "days"
+      }
+    },
+    {
+      "id": "condition-loop-start",
+      "type": "IfElse",
+      "name": "Check Status",
+      "config": {
+        "condition": "contact.status == 'pending'"
+      }
+    },
+    {
+      "id": "action-in-loop-1",
+      "type": "UpdateContact",
+      "name": "Update Contact",
+      "config": {
+        "fields": {
+          "lastChecked": "{{now}}"
+        }
+      }
+    },
+    {
+      "id": "action-in-loop-2",
+      "type": "Wait",
+      "name": "Wait 1 hour",
+      "config": {
+        "delay": "1h",
+        "unit": "hours"
+      }
+    },
+    {
+      "id": "action-deprecated",
+      "type": "LegacyIntegration",
+      "name": "Old Integration",
+      "description": "This uses deprecated API",
+      "config": {
+        "apiVersion": "v1"
+      }
+    },
+    {
+      "id": "action-no-description-1",
+      "type": "SendEmail",
+      "name": "Email Action",
+      "config": {
+        "recipient": "{{contact.email}}",
+        "subject": "No description provided"
+      }
+    },
+    {
+      "id": "action-no-description-2",
+      "type": "AddTag",
+      "name": "Tag Action",
+      "config": {
+        "tags": ["processed"]
+      }
+    },
+    {
+      "id": "action-hardcoded-email",
+      "type": "SendEmail",
+      "name": "Hardcoded Email",
+      "description": "Uses hardcoded email instead of contact field",
+      "config": {
+        "recipient": "admin@company.com",
+        "subject": "Alert",
+        "body": "This should use contact email"
+      }
+    }
+  ],
+  "webhooks": [
+    {
+      "id": "webhook-localhost-1",
+      "name": "Local Development Webhook",
+      "url": "http://localhost:3000/webhook",
+      "method": "POST"
+    },
+    {
+      "id": "webhook-no-timeout",
+      "name": "Webhook No Timeout",
+      "url": "https://slow-api.example.com/endpoint",
+      "method": "POST"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "trigger-contact-updated",
+      "type": "trigger",
+      "name": "Contact Updated"
+    },
+    {
+      "id": "trigger-tag-added-conflict",
+      "type": "trigger",
+      "name": "Tag Added (Conflict)"
+    },
+    {
+      "id": "action-email-missing-recipient",
+      "type": "action",
+      "name": "Send Email"
+    },
+    {
+      "id": "action-sms-missing-phone",
+      "type": "action",
+      "name": "Send SMS"
+    },
+    {
+      "id": "action-webhook-localhost",
+      "type": "action",
+      "name": "Localhost Webhook"
+    },
+    {
+      "id": "action-webhook-127",
+      "type": "action",
+      "name": "Another Local Webhook"
+    },
+    {
+      "id": "action-payment-no-retry",
+      "type": "action",
+      "name": "Charge Payment"
+    },
+    {
+      "id": "action-api-no-error-handling",
+      "type": "action",
+      "name": "API Call No Error Handling"
+    },
+    {
+      "id": "action-wait-excessive",
+      "type": "action",
+      "name": "Wait 45 days"
+    },
+    {
+      "id": "condition-loop-start",
+      "type": "condition",
+      "name": "Check Status"
+    },
+    {
+      "id": "action-in-loop-1",
+      "type": "action",
+      "name": "Update Contact"
+    },
+    {
+      "id": "action-in-loop-2",
+      "type": "action",
+      "name": "Wait 1 hour"
+    },
+    {
+      "id": "action-deprecated",
+      "type": "action",
+      "name": "Old Integration"
+    },
+    {
+      "id": "action-no-description-1",
+      "type": "action",
+      "name": "Email Action"
+    },
+    {
+      "id": "action-no-description-2",
+      "type": "action",
+      "name": "Tag Action"
+    },
+    {
+      "id": "action-hardcoded-email",
+      "type": "action",
+      "name": "Hardcoded Email"
+    }
+  ],
+  "connections": [
+    {"from": "trigger-contact-updated", "to": "action-email-missing-recipient"},
+    {"from": "trigger-tag-added-conflict", "to": "action-sms-missing-phone"},
+    {"from": "action-email-missing-recipient", "to": "action-webhook-localhost"},
+    {"from": "action-sms-missing-phone", "to": "action-webhook-127"},
+    {"from": "action-webhook-localhost", "to": "action-payment-no-retry"},
+    {"from": "action-webhook-127", "to": "action-api-no-error-handling"},
+    {"from": "action-payment-no-retry", "to": "action-wait-excessive"},
+    {"from": "action-api-no-error-handling", "to": "condition-loop-start"},
+    {"from": "condition-loop-start", "to": "action-in-loop-1", "branch": "yes"},
+    {"from": "condition-loop-start", "to": "action-deprecated", "branch": "no"},
+    {"from": "action-in-loop-1", "to": "action-in-loop-2"},
+    {"from": "action-in-loop-2", "to": "condition-loop-start"},
+    {"from": "action-deprecated", "to": "action-no-description-1"},
+    {"from": "action-no-description-1", "to": "action-no-description-2"},
+    {"from": "action-no-description-2", "to": "action-hardcoded-email"}
+  ]
+}

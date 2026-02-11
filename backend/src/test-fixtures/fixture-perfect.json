@@ -1,0 +1,211 @@
+{
+  "id": "perfect-workflow-456",
+  "name": "Well-Configured Perfect Workflow",
+  "status": "active",
+  "version": 5,
+  "createdAt": "2024-02-15T12:00:00.000Z",
+  "updatedAt": "2024-02-20T16:45:00.000Z",
+  "locationId": "eBG6WapS3v4ZqwA45MTxtYJ",
+  "estimatedContacts": 100,
+  "triggers": [
+    {
+      "id": "trigger-optimal",
+      "type": "FormSubmitted",
+      "name": "Contact Form Submitted",
+      "description": "Triggers when the contact form is submitted with proper validation",
+      "config": {
+        "formId": "form-contact-2024",
+        "validationEnabled": true
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "action-wait-optimal",
+      "type": "Wait",
+      "name": "Wait 5 Minutes",
+      "description": "Short delay to ensure form data is fully processed",
+      "config": {
+        "delay": "5m",
+        "unit": "minutes"
+      }
+    },
+    {
+      "id": "action-email-perfect",
+      "type": "SendEmail",
+      "name": "Send Welcome Email",
+      "description": "Sends a personalized welcome email with proper merge fields and fallbacks",
+      "config": {
+        "recipient": "{{contact.email}}",
+        "subject": "Welcome {{contact.firstName | default: 'there'}}!",
+        "body": "Thank you for reaching out, {{contact.firstName}}. We'll be in touch soon.",
+        "template": "welcome-email-v3",
+        "fallbackEmail": "support@company.com",
+        "trackOpens": true,
+        "trackClicks": true,
+        "validateEmail": true
+      }
+    },
+    {
+      "id": "action-webhook-perfect",
+      "type": "CustomWebhook",
+      "name": "Sync to CRM",
+      "description": "Sends contact data to external CRM with proper error handling and timeout",
+      "config": {
+        "url": "https://api.production-crm.com/v3/contacts/sync",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer {{env.CRM_API_TOKEN}}",
+          "Content-Type": "application/json",
+          "X-Request-ID": "{{workflow.runId}}"
+        },
+        "body": {
+          "contact_id": "{{contact.id}}",
+          "email": "{{contact.email}}",
+          "name": "{{contact.fullName}}",
+          "source": "ghl_workflow"
+        },
+        "timeout": 30000,
+        "retryCount": 3,
+        "retryDelay": 2000,
+        "errorHandling": {
+          "onTimeout": "continue",
+          "on4xx": "log_and_continue",
+          "on5xx": "retry"
+        }
+      }
+    },
+    {
+      "id": "condition-validation",
+      "type": "IfElse",
+      "name": "Validate Contact Data",
+      "description": "Ensures contact has required fields before proceeding",
+      "config": {
+        "condition": "contact.email != null AND contact.phone != null",
+        "timeout": 5000
+      }
+    },
+    {
+      "id": "action-sms-perfect",
+      "type": "SendSMS",
+      "name": "Send Confirmation SMS",
+      "description": "Sends SMS confirmation with proper phone validation",
+      "config": {
+        "recipient": "{{contact.phone}}",
+        "message": "Hi {{contact.firstName}}! Thanks for contacting us. We've received your message.",
+        "validatePhone": true,
+        "countryCode": "US",
+        "rateLimitCheck": true
+      }
+    },
+    {
+      "id": "action-tag-perfect",
+      "type": "AddTag",
+      "name": "Add Engagement Tags",
+      "description": "Tags contact with proper engagement tracking tags",
+      "config": {
+        "tags": [
+          "form-submitted",
+          "email-sent",
+          "sms-sent",
+          "engaged-{{date.year}}-{{date.month}}"
+        ]
+      }
+    },
+    {
+      "id": "action-update-perfect",
+      "type": "UpdateContact",
+      "name": "Update Contact Fields",
+      "description": "Updates contact with workflow completion data",
+      "config": {
+        "fields": {
+          "lastWorkflowRun": "{{now}}",
+          "workflowStatus": "completed",
+          "lastEngagementDate": "{{date.iso}}",
+          "source": "contact-form-workflow"
+        },
+        "validateFields": true
+      }
+    },
+    {
+      "id": "action-notification-perfect",
+      "type": "SendNotification",
+      "name": "Notify Team",
+      "description": "Internal notification to sales team with proper details",
+      "config": {
+        "recipients": ["sales-team@company.com"],
+        "subject": "New Contact Form Submission",
+        "body": "Contact: {{contact.fullName}} ({{contact.email}})\nPhone: {{contact.phone}}\nMessage: {{form.message}}",
+        "priority": "normal"
+      }
+    }
+  ],
+  "webhooks": [
+    {
+      "id": "webhook-crm-production",
+      "name": "Production CRM Integration",
+      "url": "https://api.production-crm.com/v3/contacts/sync",
+      "method": "POST",
+      "timeout": 30000,
+      "retryCount": 3
+    }
+  ],
+  "nodes": [
+    {
+      "id": "trigger-optimal",
+      "type": "trigger",
+      "name": "Contact Form Submitted"
+    },
+    {
+      "id": "action-wait-optimal",
+      "type": "action",
+      "name": "Wait 5 Minutes"
+    },
+    {
+      "id": "action-email-perfect",
+      "type": "action",
+      "name": "Send Welcome Email"
+    },
+    {
+      "id": "action-webhook-perfect",
+      "type": "action",
+      "name": "Sync to CRM"
+    },
+    {
+      "id": "condition-validation",
+      "type": "condition",
+      "name": "Validate Contact Data"
+    },
+    {
+      "id": "action-sms-perfect",
+      "type": "action",
+      "name": "Send Confirmation SMS"
+    },
+    {
+      "id": "action-tag-perfect",
+      "type": "action",
+      "name": "Add Engagement Tags"
+    },
+    {
+      "id": "action-update-perfect",
+      "type": "action",
+      "name": "Update Contact Fields"
+    },
+    {
+      "id": "action-notification-perfect",
+      "type": "action",
+      "name": "Notify Team"
+    }
+  ],
+  "connections": [
+    {"from": "trigger-optimal", "to": "action-wait-optimal"},
+    {"from": "action-wait-optimal", "to": "action-email-perfect"},
+    {"from": "action-email-perfect", "to": "action-webhook-perfect"},
+    {"from": "action-webhook-perfect", "to": "condition-validation"},
+    {"from": "condition-validation", "to": "action-sms-perfect", "branch": "yes"},
+    {"from": "condition-validation", "to": "action-notification-perfect", "branch": "no"},
+    {"from": "action-sms-perfect", "to": "action-tag-perfect"},
+    {"from": "action-tag-perfect", "to": "action-update-perfect"},
+    {"from": "action-update-perfect", "to": "action-notification-perfect"}
+  ]
+}

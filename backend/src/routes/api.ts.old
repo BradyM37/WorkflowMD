@@ -1,0 +1,187 @@
+import { Router } from 'express';
+import { pool } from '../lib/database';
+import { requireAuth } from '../middleware/auth';
+import { analyzeWorkflow } from '../lib/analysis-engine';
+import { fetchWorkflows, fetchWorkflow } from '../lib/ghl-api';
+import { parseWorkflowForReactFlow } from '../lib/workflow-parser';
+
+export const apiRouter = Router();
+
+// All API routes require authentication
+apiRouter.use(requireAuth);
+
+// List workflows from GHL
+apiRouter.get('/workflows', async (req, res) => {
+  try {
+    const locationId = req.cookies.location_id;
+    const workflows = await fetchWorkflows(locationId);
+    res.json(workflows);
+  } catch (error: any) {
+    console.error('Error fetching workflows:', error);
+    res.status(500).json({ error: 'Failed to fetch workflows' });
+  }
+});
+
+// Get workflow structure (for React Flow visualization)
+apiRouter.get('/workflows/:id/structure', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const locationId = req.cookies.location_id;
+
+    // Fetch workflow from GHL
+    const ghlWorkflow = await fetchWorkflow(id, locationId);
+
+    // Parse into React Flow format
+    const structure = parseWorkflowForReactFlow(ghlWorkflow);
+
+    res.json({
+      success: true,
+      ...structure
+    });
+  } catch (error: any) {
+    console.error('Error fetching workflow structure:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to fetch workflow structure' 
+    });
+  }
+});
+
+// Analyze a workflow
+apiRouter.post('/analyze', async (req, res) => {
+  try {
+    const { workflowId } = req.body;
+    const locationId = req.cookies.location_id;
+
+    if (!workflowId) {
+      return res.status(400).json({ error: 'Workflow ID required' });
+    }
+
+    // Fetch workflow from GHL
+    const workflow = await fetchWorkflow(workflowId, locationId);
+
+    // Run analysis
+    const analysis = analyzeWorkflow(workflow);
+
+    // Get subscription status
+    const subResult = await pool.query(
+      'SELECT subscription_status FROM oauth_tokens WHERE location_id = $1',
+      [locationId]
+    );
+    const subscription = subResult.rows[0]?.subscription_status || 'free';
+
+    // Store full results in database
+    await pool.query(
+      `INSERT INTO analysis_results 
+       (location_id, workflow_id, workflow_name, health_score, issues_found, results) 
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [
+        locationId,
+        workflowId,
+        workflow.name,
+        analysis.healthScore,
+        analysis.issues.length,
+        JSON.stringify(analysis)
+      ]
+    );
+
+    // Apply feature gating
+    if (subscription === 'free') {
+      const limitedAnalysis = {
+        healthScore: analysis.healthScore,
+        grade: analysis.grade,
+        issuesFound: analysis.issues.length,
+        issues: analysis.issues.slice(0, 3), // Show only 3 issues
+        upgradePrompt: {
+          message: `${Math.max(0, analysis.issues.length - 3)} more issues found`,
+          hidden: Math.max(0, analysis.issues.length - 3),
+          upgradeUrl: '/api/subscription/checkout'
+        }
+      };
+      return res.json(limitedAnalysis);
+    }
+
+    // Pro users get everything
+    res.json(analysis);
+
+  } catch (error: any) {
+    console.error('Analysis error:', error);
+    res.status(500).json({ error: 'Analysis failed' });
+  }
+});
+
+// Get analysis history
+apiRouter.get('/history', async (req, res) => {
+  try {
+    const locationId = req.cookies.location_id;
+    
+    // Get subscription to determine history limit
+    const subResult = await pool.query(
+      'SELECT subscription_status FROM oauth_tokens WHERE location_id = $1',
+      [locationId]
+    );
+    const subscription = subResult.rows[0]?.subscription_status || 'free';
+    
+    // Free users: 7 days, Pro users: 90 days
+    const daysLimit = subscription === 'pro' ? 90 : 7;
+    
+    const result = await pool.query(
+      `SELECT id, workflow_id, workflow_name, risk_score, issues_found, created_at 
+       FROM analysis_results 
+       WHERE location_id = $1 
+       AND created_at > NOW() - INTERVAL '${daysLimit} days'
+       ORDER BY created_at DESC 
+       LIMIT 20`,
+      [locationId]
+    );
+
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error('Error fetching history:', error);
+    res.status(500).json({ error: 'Failed to fetch history' });
+  }
+});
+
+// Get specific analysis result
+apiRouter.get('/analysis/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const locationId = req.cookies.location_id;
+
+    const result = await pool.query(
+      'SELECT * FROM analysis_results WHERE id = $1 AND location_id = $2',
+      [id, locationId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Analysis not found' });
+    }
+
+    const analysis = result.rows[0];
+    
+    // Get subscription status
+    const subResult = await pool.query(
+      'SELECT subscription_status FROM oauth_tokens WHERE location_id = $1',
+      [locationId]
+    );
+    const subscription = subResult.rows[0]?.subscription_status || 'free';
+
+    // Apply feature gating to stored results
+    if (subscription === 'free' && analysis.results) {
+      const results = analysis.results;
+      analysis.results = {
+        ...results,
+        issues: results.issues?.slice(0, 3),
+        upgradePrompt: {
+          message: `${Math.max(0, (results.issues?.length || 0) - 3)} more issues available`,
+          upgradeUrl: '/api/subscription/checkout'
+        }
+      };
+    }
+
+    res.json(analysis);
+  } catch (error: any) {
+    console.error('Error fetching analysis:', error);
+    res.status(500).json({ error: 'Failed to fetch analysis' });
+  }
+});

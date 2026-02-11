@@ -1,0 +1,350 @@
+/* Mobile Responsive Styles for GHL Workflow Debugger */
+
+/* Tablet and below (max-width: 768px) */
+@media (max-width: 768px) {
+  /* Header adjustments */
+  .ant-layout-header {
+    padding: 0 16px !important;
+    flex-wrap: wrap;
+    height: auto !important;
+    min-height: 64px;
+  }
+
+  .ant-layout-header h1 {
+    font-size: 18px !important;
+    margin-right: auto;
+  }
+
+  .ant-layout-header .ant-space {
+    margin-top: 8px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ant-layout-header .ant-btn {
+    font-size: 12px;
+    padding: 4px 8px;
+    height: 32px;
+  }
+
+  /* Content padding */
+  .ant-layout-content {
+    padding: 16px !important;
+  }
+
+  /* Card spacing */
+  .ant-card {
+    margin-bottom: 16px;
+  }
+
+  /* Hero sections */
+  .ant-card .ant-row {
+    flex-direction: column;
+  }
+
+  /* Stats */
+  .stat-card {
+    padding: 16px !important;
+    margin-bottom: 12px;
+  }
+
+  /* Typography */
+  h1.ant-typography {
+    font-size: 28px !important;
+  }
+
+  h2.ant-typography {
+    font-size: 24px !important;
+  }
+
+  h3.ant-typography {
+    font-size: 20px !important;
+  }
+
+  /* Buttons */
+  .ant-btn-lg {
+    height: 40px !important;
+    font-size: 14px !important;
+    padding: 0 16px !important;
+  }
+
+  /* Workflow cards - stack vertically */
+  .ant-list-grid .ant-col {
+    max-width: 100% !important;
+  }
+
+  /* Progress circles */
+  .ant-progress-circle {
+    width: 150px !important;
+    height: 150px !important;
+  }
+
+  /* Timeline adjustments */
+  .ant-timeline {
+    margin-left: 0 !important;
+  }
+
+  .ant-timeline-item {
+    padding-left: 24px !important;
+  }
+
+  /* Tabs */
+  .ant-tabs-nav {
+    margin-bottom: 16px !important;
+  }
+
+  .ant-tabs-tab {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+
+  /* Filters and search */
+  .ant-input-search {
+    width: 100% !important;
+  }
+
+  .ant-select {
+    width: 100% !important;
+  }
+
+  /* Footer */
+  .ant-layout-footer {
+    padding: 16px !important;
+    font-size: 12px;
+  }
+
+  /* Modal adjustments */
+  .ant-modal {
+    max-width: calc(100vw - 32px) !important;
+    margin: 16px auto !important;
+  }
+
+  /* Alert messages */
+  .ant-alert {
+    padding: 12px !important;
+  }
+
+  .ant-alert-message {
+    font-size: 14px !important;
+  }
+
+  /* Space components */
+  .ant-space {
+    gap: 8px !important;
+  }
+
+  /* Avatar sizes */
+  .ant-avatar-lg {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 24px !important;
+  }
+
+  /* Badge positioning */
+  .ant-badge {
+    font-size: 11px !important;
+  }
+
+  /* Settings page */
+  .ant-tabs-content {
+    padding: 0 !important;
+  }
+
+  /* Form labels */
+  .ant-form-item-label {
+    padding-bottom: 4px !important;
+  }
+}
+
+/* Mobile phones (max-width: 576px) */
+@media (max-width: 576px) {
+  /* Even smaller header */
+  .ant-layout-header h1 {
+    font-size: 16px !important;
+  }
+
+  /* Hide secondary buttons on mobile */
+  .ant-layout-header .ant-btn:not(.ant-btn-primary) {
+    display: none !important;
+  }
+
+  /* Content padding */
+  .ant-layout-content {
+    padding: 12px !important;
+  }
+
+  /* Card body padding */
+  .ant-card-body {
+    padding: 16px !important;
+  }
+
+  /* Typography even smaller */
+  h1.ant-typography {
+    font-size: 24px !important;
+  }
+
+  h2.ant-typography {
+    font-size: 20px !important;
+  }
+
+  h3.ant-typography {
+    font-size: 18px !important;
+  }
+
+  /* Progress circles smaller */
+  .ant-progress-circle {
+    width: 120px !important;
+    height: 120px !important;
+  }
+
+  /* Stack all columns */
+  .ant-col {
+    max-width: 100% !important;
+    margin-bottom: 12px;
+  }
+
+  /* Smaller avatars */
+  .ant-avatar {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 20px !important;
+  }
+
+  /* Compact stats */
+  .ant-statistic {
+    font-size: 14px !important;
+  }
+
+  .ant-statistic-content-value {
+    font-size: 20px !important;
+  }
+
+  /* Smaller badges */
+  .ant-badge-count {
+    height: 18px !important;
+    line-height: 18px !important;
+    min-width: 18px !important;
+    font-size: 10px !important;
+  }
+
+  /* Timeline on mobile */
+  .ant-timeline-item-content {
+    margin-left: 8px !important;
+  }
+
+  /* Input sizes */
+  .ant-input,
+  .ant-select-selector,
+  .ant-btn {
+    font-size: 14px !important;
+  }
+
+  /* Tag sizes */
+  .ant-tag {
+    font-size: 11px !important;
+    padding: 2px 6px !important;
+  }
+}
+
+/* Landscape phone adjustments */
+@media (max-width: 896px) and (orientation: landscape) {
+  .ant-layout-header {
+    min-height: 56px !important;
+  }
+
+  .ant-progress-circle {
+    width: 100px !important;
+    height: 100px !important;
+  }
+}
+
+/* Large tablets (768px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .ant-layout-header {
+    padding: 0 24px !important;
+  }
+
+  .ant-layout-content {
+    padding: 24px !important;
+  }
+
+  .ant-list-grid .ant-col {
+    max-width: 50% !important;
+  }
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger tap targets */
+  .ant-btn {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+
+  .ant-switch {
+    min-width: 44px !important;
+    min-height: 22px !important;
+  }
+
+  /* Prevent text selection on buttons */
+  .ant-btn,
+  .ant-card-hoverable {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  /* Better card hover on touch */
+  .ant-card-hoverable:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* Print styles */
+@media print {
+  .ant-layout-header,
+  .ant-layout-footer,
+  .ant-btn,
+  .ant-tabs-nav {
+    display: none !important;
+  }
+
+  .ant-card {
+    box-shadow: none !important;
+    border: 1px solid #d9d9d9 !important;
+    page-break-inside: avoid;
+  }
+
+  .ant-layout-content {
+    padding: 0 !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .ant-card {
+    border: 2px solid currentColor !important;
+  }
+
+  .ant-btn-primary {
+    border: 2px solid transparent !important;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dark mode preparation (for future implementation) */
+@media (prefers-color-scheme: dark) {
+  /* Will be populated when dark mode is implemented */
+  /* body {
+    background-color: #141414;
+    color: #ffffff;
+  } */
+}
