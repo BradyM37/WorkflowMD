@@ -46,7 +46,8 @@ import {
   ArrowDownOutlined,
   ReloadOutlined,
   InfoCircleOutlined,
-  LinkOutlined
+  LinkOutlined,
+  SettingOutlined
 } from '@ant-design/icons';
 import { 
   LineChart, 
@@ -69,6 +70,7 @@ import { toast } from 'react-hot-toast';
 import api from '../services/api';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import './ResponseDashboard.css';
 
 const { Title, Text, Paragraph } = Typography;
@@ -214,6 +216,7 @@ const ResponseDashboard: React.FC = () => {
   const { isDarkMode } = useTheme();
   const { ghlConnected } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [selectedDays, setSelectedDays] = useState<number>(7);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -652,6 +655,12 @@ const ResponseDashboard: React.FC = () => {
             >
               {isSyncing ? 'Syncing...' : 'Sync'}
             </Button>
+          </Tooltip>
+          <Tooltip title="Alert Settings">
+            <Button 
+              icon={<SettingOutlined />}
+              onClick={() => navigate('/response-settings')}
+            />
           </Tooltip>
         </Space>
       </div>

@@ -23,6 +23,7 @@ import Pricing from './pages/Pricing';
 import Settings from './pages/Settings';
 import WorkflowAnalysis from './pages/WorkflowAnalysis';
 import ResponseDashboard from './pages/ResponseDashboard';
+import ResponseSettings from './pages/ResponseSettings';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import PrivateRoute from './components/PrivateRoute';
@@ -332,6 +333,14 @@ function AppContent() {
                 element={
                   <PrivateRoute>
                     <ResponseDashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/response-settings"
+                element={
+                  <PrivateRoute>
+                    <ResponseSettings />
                   </PrivateRoute>
                 }
               />
