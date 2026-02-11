@@ -457,6 +457,125 @@ webhookRouter.post('/events', async (req, res) => {
         break;
       }
 
+      // ========== MESSAGE TRACKING FOR RESPONSE TIME ==========
+      
+      case 'InboundMessage': {
+        // New inbound message - track for response time
+        const conversationId = data.conversationId || data.conversation_id;
+        const contactId = data.contactId || data.contact_id;
+        const messageId = data.messageId || data.message_id || data.id;
+        const sentAt = data.dateAdded || data.createdAt || new Date().toISOString();
+        const channel = data.type || data.messageType || 'unknown';
+        
+        if (locationId && conversationId) {
+          // Upsert conversation with first inbound time
+          await retryQuery(
+            () => pool.query(
+              `INSERT INTO conversations (
+                ghl_conversation_id, location_id, contact_id, channel, 
+                first_inbound_at, last_message_at, last_message_direction, message_count
+              ) VALUES ($1, $2, $3, $4, $5, $5, 'inbound', 1)
+              ON CONFLICT (ghl_conversation_id) DO UPDATE SET
+                last_message_at = $5,
+                last_message_direction = 'inbound',
+                message_count = conversations.message_count + 1,
+                first_inbound_at = COALESCE(conversations.first_inbound_at, $5),
+                updated_at = NOW()`,
+              [conversationId, locationId, contactId, channel, new Date(sentAt)]
+            ),
+            2,
+            500
+          );
+          
+          // Insert message record
+          if (messageId) {
+            await pool.query(
+              `INSERT INTO messages (ghl_message_id, conversation_id, location_id, direction, channel, sent_at)
+               SELECT $1, c.id, $2, 'inbound', $3, $4
+               FROM conversations c WHERE c.ghl_conversation_id = $5
+               ON CONFLICT (ghl_message_id) DO NOTHING`,
+              [messageId, locationId, channel, new Date(sentAt), conversationId]
+            ).catch(() => {}); // Ignore if conversation doesn't exist yet
+          }
+          
+          logger.info('📥 Inbound message tracked', { locationId, conversationId });
+        }
+        break;
+      }
+
+      case 'OutboundMessage': {
+        // Outbound message - calculate response time
+        const conversationId = data.conversationId || data.conversation_id;
+        const messageId = data.messageId || data.message_id || data.id;
+        const sentAt = data.dateAdded || data.createdAt || new Date().toISOString();
+        const userId = data.userId || data.user_id;
+        const userName = data.userName || data.user_name;
+        const channel = data.type || data.messageType || 'unknown';
+        
+        if (locationId && conversationId) {
+          const sentTime = new Date(sentAt);
+          
+          // Update conversation with first response (if not already set)
+          // Calculate response time from first inbound to this outbound
+          await retryQuery(
+            () => pool.query(
+              `UPDATE conversations SET
+                first_response_at = COALESCE(first_response_at, $1),
+                response_time_seconds = COALESCE(response_time_seconds, 
+                  CASE WHEN first_inbound_at IS NOT NULL 
+                  THEN EXTRACT(EPOCH FROM ($1::timestamp - first_inbound_at))::INTEGER 
+                  ELSE NULL END
+                ),
+                assigned_user_id = COALESCE(assigned_user_id, $2),
+                assigned_user_name = COALESCE(assigned_user_name, $3),
+                last_message_at = $1,
+                last_message_direction = 'outbound',
+                message_count = message_count + 1,
+                is_missed = false,
+                updated_at = NOW()
+              WHERE ghl_conversation_id = $4`,
+              [sentTime, userId, userName, conversationId]
+            ),
+            2,
+            500
+          );
+          
+          // Insert message record
+          if (messageId) {
+            await pool.query(
+              `INSERT INTO messages (ghl_message_id, conversation_id, location_id, direction, channel, sent_at, sent_by_user_id, sent_by_user_name)
+               SELECT $1, c.id, $2, 'outbound', $3, $4, $5, $6
+               FROM conversations c WHERE c.ghl_conversation_id = $7
+               ON CONFLICT (ghl_message_id) DO NOTHING`,
+              [messageId, locationId, channel, sentTime, userId, userName, conversationId]
+            ).catch(() => {});
+          }
+          
+          logger.info('📤 Outbound message tracked', { 
+            locationId, 
+            conversationId,
+            hasResponseTime: true
+          });
+        }
+        break;
+      }
+
+      case 'ConversationUnreadUpdate': {
+        // Conversation status changed
+        const conversationId = data.conversationId || data.conversation_id;
+        const unreadCount = data.unreadCount;
+        
+        if (locationId && conversationId && unreadCount === 0) {
+          // Mark as not missed if all messages are read
+          await pool.query(
+            `UPDATE conversations SET is_missed = false, updated_at = NOW()
+             WHERE ghl_conversation_id = $1`,
+            [conversationId]
+          ).catch(() => {});
+        }
+        break;
+      }
+
       default:
         logger.debug('Unhandled GHL event type', { eventType, locationId });
     }
