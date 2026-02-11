@@ -154,7 +154,8 @@ const Dashboard: React.FC = () => {
   // Fetch workflows from API
   const { 
     data: workflows, 
-    isLoading: loadingWorkflows
+    isLoading: loadingWorkflows,
+    refetch: refetchWorkflows
   } = useQuery<Workflow[]>(
     'workflows',
     () => {
@@ -166,6 +167,9 @@ const Dashboard: React.FC = () => {
     },
     {
       retry: 1,
+      refetchOnMount: 'always',      // Always refetch when component mounts
+      refetchOnWindowFocus: true,    // Refetch when user returns to tab
+      staleTime: 30000,              // Consider data stale after 30 seconds
       onError: (error) => {
         console.error('Error fetching workflows:', error);
         toast.error('Failed to load workflows');

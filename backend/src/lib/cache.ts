@@ -311,6 +311,6 @@ export const CacheTTL = {
   MEDIUM: 300,         // 5 minutes
   LONG: 1800,          // 30 minutes
   ANALYSIS: 3600,      // 1 hour (analysis results are expensive)
-  WORKFLOW: 600,       // 10 minutes
+  WORKFLOW: 60,        // 1 minute (keep fresh for new workflow visibility)
   USER: 900            // 15 minutes
 };
