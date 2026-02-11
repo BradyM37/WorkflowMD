@@ -347,10 +347,10 @@ async function processStripeEvent(event: Stripe.Event): Promise<void> {
 }
 
 /**
- * POST /webhooks/ghl
- * Handle GHL webhook events (subscriptions, contacts, etc.)
+ * POST /webhooks/events
+ * Handle webhook events (subscriptions, contacts, etc.)
  */
-webhookRouter.post('/ghl', async (req, res) => {
+webhookRouter.post('/events', async (req, res) => {
   const signature = req.headers['x-ghl-signature'] as string;
   
   logger.info('GHL webhook received', {
