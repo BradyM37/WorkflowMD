@@ -1,6 +1,11 @@
 import { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { notifyShortcut } from '../utils/notifications';
+import { toast } from '../utils/toast';
+
+// Simple shortcut notification
+const notifyShortcut = (action: string, shortcut: string) => {
+  toast.info(`${action} (${shortcut})`);
+};
 
 interface ShortcutConfig {
   key: string;

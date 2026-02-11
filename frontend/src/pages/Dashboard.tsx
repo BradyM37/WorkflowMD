@@ -26,7 +26,7 @@ import { useAuth } from '../contexts/AuthContext';
 import LoadingState from '../components/LoadingState';
 import ScheduleModal from '../components/ScheduleModal';
 import ScanHistoryPanel from '../components/ScanHistoryPanel';
-import { notify } from '../utils/toast';
+import { toast, notify } from '../utils/toast';
 import { MOCK_WORKFLOWS, createMockAnalysisForWorkflow } from '../mocks/mockData';
 import dayjs from 'dayjs';
 

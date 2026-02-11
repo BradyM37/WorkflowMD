@@ -22,7 +22,7 @@ import {
   CheckCircleOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { notify } from '../utils/notifications';
+import { notify } from '../utils/toast';
 
 const { Text } = Typography;
 const { Option } = Select;
