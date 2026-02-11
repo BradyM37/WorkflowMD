@@ -32,7 +32,9 @@ import {
   BulbOutlined,
   CalendarOutlined,
   ClockCircleOutlined,
-  SettingOutlined
+  SettingOutlined,
+  BgColorsOutlined,
+  ShareAltOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';

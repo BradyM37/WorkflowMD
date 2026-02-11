@@ -153,7 +153,7 @@ const InsightsPanel: React.FC<InsightsPanelProps> = ({
       timing: <ClockCircleOutlined />,
       channel: <MessageOutlined />,
       team: <TeamOutlined />,
-      trend: <TrendingUpOutlined />,
+      trend: <RiseOutlined />,
       volume: <BarChartOutlined />,
       behavior: <ThunderboltOutlined />
     };
