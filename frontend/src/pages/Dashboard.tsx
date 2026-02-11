@@ -115,6 +115,30 @@ const Dashboard: React.FC = () => {
     }
   }, [searchParams, setSearchParams, checkAuth, queryClient]);
 
+  // Handle OAuth callback - extract and store auth token
+  useEffect(() => {
+    const ghlConnected = searchParams.get('ghl_connected');
+    const authToken = searchParams.get('auth_token');
+    
+    if (ghlConnected === 'true' && authToken) {
+      // Store the auth token
+      localStorage.setItem('auth_token', authToken);
+      
+      // Re-check auth with new token
+      checkAuth();
+      
+      // Invalidate cached queries to fetch real data
+      queryClient.invalidateQueries('workflows');
+      
+      // Clean up the URL
+      searchParams.delete('ghl_connected');
+      searchParams.delete('auth_token');
+      setSearchParams(searchParams, { replace: true });
+      
+      toast.success('GHL account connected!');
+    }
+  }, [searchParams, setSearchParams, checkAuth, queryClient]);
+
   // Theme-aware colors
   const colors = {
     cardBg: isDarkMode ? '#262626' : 'white',

@@ -663,10 +663,29 @@ authRouter.get('/oauth/callback', asyncHandler(async (req: any, res: any) => {
       requestId: req.id
     });
 
-    // Redirect to dashboard
+    // Get or generate JWT for the redirect
+    let jwtToken: string;
+    const authToken = req.cookies.auth_token || req.cookies.token;
+    if (authToken) {
+      jwtToken = authToken;
+    } else {
+      // Generate new token for this user
+      const { generateJWT } = await import('../lib/user-auth');
+      const userForToken = { 
+        id: userId!, 
+        email: `${tokens.locationId}@ghl.local`,
+        email_verified: true,
+        created_at: new Date(),
+        updated_at: new Date()
+      };
+      jwtToken = generateJWT(userForToken);
+    }
+
+    // Redirect to dashboard with token in URL fragment (more secure than query params)
+    // Frontend will extract and store the token
     const dashboardUrl = process.env.FRONTEND_URL 
-      ? `${process.env.FRONTEND_URL}/dashboard?ghl_connected=true`
-      : '/dashboard?ghl_connected=true';
+      ? `${process.env.FRONTEND_URL}/dashboard?ghl_connected=true&auth_token=${encodeURIComponent(jwtToken)}`
+      : `/dashboard?ghl_connected=true&auth_token=${encodeURIComponent(jwtToken)}`;
     
     res.redirect(dashboardUrl);
 
