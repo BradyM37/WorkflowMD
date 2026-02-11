@@ -1,5 +1,14 @@
 import React from 'react';
-import { X, Check, Zap, Building2, Crown } from 'lucide-react';
+import { Modal, Card, Typography, Space, Button, Tag, Row, Col, Divider, Tooltip } from 'antd';
+import {
+  CloseOutlined,
+  CheckOutlined,
+  ThunderboltOutlined,
+  CrownOutlined,
+  BankOutlined
+} from '@ant-design/icons';
+
+const { Title, Text } = Typography;
 
 interface UpgradePromptProps {
   isOpen: boolean;
@@ -13,7 +22,7 @@ const FEATURES = {
   free: {
     name: 'Free',
     price: '$0',
-    icon: Zap,
+    icon: <ThunderboltOutlined />,
     features: [
       { name: 'Basic dashboard', included: true },
       { name: '7-day history', included: true },
@@ -30,7 +39,7 @@ const FEATURES = {
   pro: {
     name: 'Pro',
     price: '$100/mo',
-    icon: Crown,
+    icon: <CrownOutlined />,
     popular: true,
     features: [
       { name: 'Basic dashboard', included: true },
@@ -48,7 +57,7 @@ const FEATURES = {
   agency: {
     name: 'Agency',
     price: '$200/mo',
-    icon: Building2,
+    icon: <BankOutlined />,
     features: [
       { name: 'Basic dashboard', included: true },
       { name: 'Unlimited history', included: true },
@@ -74,167 +83,182 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
   requiredPlan = 'pro',
   feature,
 }) => {
-  if (!isOpen) return null;
-
   const handleUpgrade = (plan: 'pro' | 'agency') => {
-    // Open GHL Marketplace in new tab
     window.open(`${MARKETPLACE_URL}?plan=${plan}`, '_blank');
   };
 
+  const getPlanColor = (plan: string) => {
+    if (plan === 'free') return '#8c8c8c';
+    if (plan === 'pro') return '#1890ff';
+    return '#722ed1';
+  };
+
+  const getPlanBgColor = (plan: string) => {
+    if (plan === 'free') return '#fafafa';
+    if (plan === 'pro') return '#e6f7ff';
+    return '#f9f0ff';
+  };
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full p-6 transform transition-all">
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          >
-            <X className="w-6 h-6" />
-          </button>
-
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
-              <Crown className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Unlock Premium Features
-            </h2>
-            {feature && (
-              <p className="text-gray-600 dark:text-gray-400">
-                <span className="font-medium text-blue-600 dark:text-blue-400">{feature}</span> requires a {requiredPlan === 'agency' ? 'Agency' : 'Pro'} subscription
-              </p>
-            )}
-          </div>
-
-          {/* Pricing cards */}
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            {(['free', 'pro', 'agency'] as const).map((plan) => {
-              const planData = FEATURES[plan];
-              const Icon = planData.icon;
-              const isCurrentPlan = currentPlan === plan;
-              const isPopular = 'popular' in planData && planData.popular;
-              const canUpgrade = plan !== 'free' && (
-                currentPlan === 'free' || 
-                (currentPlan === 'pro' && plan === 'agency')
-              );
-
-              return (
-                <div
-                  key={plan}
-                  className={`relative rounded-xl border-2 p-6 transition-all ${
-                    isPopular
-                      ? 'border-blue-500 shadow-lg shadow-blue-500/20'
-                      : isCurrentPlan
-                      ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                      : 'border-gray-200 dark:border-gray-700'
-                  }`}
-                >
-                  {isPopular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      MOST POPULAR
-                    </div>
-                  )}
-                  
-                  {isCurrentPlan && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      CURRENT PLAN
-                    </div>
-                  )}
-
-                  <div className="text-center mb-6">
-                    <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full mb-3 ${
-                      plan === 'free' 
-                        ? 'bg-gray-100 dark:bg-gray-700' 
-                        : plan === 'pro'
-                        ? 'bg-blue-100 dark:bg-blue-900/50'
-                        : 'bg-purple-100 dark:bg-purple-900/50'
-                    }`}>
-                      <Icon className={`w-6 h-6 ${
-                        plan === 'free'
-                          ? 'text-gray-600 dark:text-gray-400'
-                          : plan === 'pro'
-                          ? 'text-blue-600 dark:text-blue-400'
-                          : 'text-purple-600 dark:text-purple-400'
-                      }`} />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                      {planData.name}
-                    </h3>
-                    <div className="mt-2">
-                      <span className="text-3xl font-bold text-gray-900 dark:text-white">
-                        {planData.price}
-                      </span>
-                    </div>
-                  </div>
-
-                  <ul className="space-y-3 mb-6">
-                    {planData.features.map((feat, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <Check className={`w-5 h-5 flex-shrink-0 ${
-                          feat.included
-                            ? 'text-green-500'
-                            : 'text-gray-300 dark:text-gray-600'
-                        }`} />
-                        <span className={`text-sm ${
-                          feat.included
-                            ? 'text-gray-700 dark:text-gray-300'
-                            : 'text-gray-400 dark:text-gray-500 line-through'
-                        }`}>
-                          {feat.name}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {canUpgrade ? (
-                    <button
-                      onClick={() => handleUpgrade(plan as 'pro' | 'agency')}
-                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
-                        isPopular
-                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                          : 'bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900'
-                      }`}
-                    >
-                      Upgrade to {planData.name}
-                    </button>
-                  ) : (
-                    <button
-                      disabled
-                      className="w-full py-3 px-4 rounded-lg font-semibold bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                    >
-                      {isCurrentPlan ? 'Current Plan' : 'N/A'}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Footer */}
-          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-            Subscriptions are managed through the{' '}
-            <a
-              href={MARKETPLACE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              GoHighLevel Marketplace
-            </a>
-            . Cancel anytime.
-          </p>
+    <Modal
+      open={isOpen}
+      onCancel={onClose}
+      footer={null}
+      width={900}
+      centered
+      closeIcon={<CloseOutlined />}
+    >
+      {/* Header */}
+      <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 64,
+          height: 64,
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, #1890ff 0%, #722ed1 100%)',
+          marginBottom: 16
+        }}>
+          <CrownOutlined style={{ fontSize: 32, color: 'white' }} />
         </div>
+        <Title level={3} style={{ margin: 0, marginBottom: 8 }}>
+          Unlock Premium Features
+        </Title>
+        {feature && (
+          <Text type="secondary">
+            <Text strong style={{ color: '#1890ff' }}>{feature}</Text> requires a {requiredPlan === 'agency' ? 'Agency' : 'Pro'} subscription
+          </Text>
+        )}
       </div>
-    </div>
+
+      {/* Pricing Cards */}
+      <Row gutter={16} style={{ marginBottom: 24 }}>
+        {(['free', 'pro', 'agency'] as const).map((plan) => {
+          const planData = FEATURES[plan];
+          const isCurrentPlan = currentPlan === plan;
+          const isPopular = 'popular' in planData && planData.popular;
+          const canUpgrade = plan !== 'free' && (
+            currentPlan === 'free' || 
+            (currentPlan === 'pro' && plan === 'agency')
+          );
+
+          return (
+            <Col key={plan} xs={24} md={8}>
+              <Card
+                hoverable={canUpgrade}
+                style={{
+                  height: '100%',
+                  borderColor: isPopular ? '#1890ff' : isCurrentPlan ? '#52c41a' : '#d9d9d9',
+                  borderWidth: isPopular || isCurrentPlan ? 2 : 1,
+                  background: getPlanBgColor(plan),
+                  position: 'relative'
+                }}
+                bodyStyle={{ padding: 24 }}
+              >
+                {isPopular && (
+                  <Tag 
+                    color="#1890ff" 
+                    style={{ 
+                      position: 'absolute', 
+                      top: -12, 
+                      left: '50%', 
+                      transform: 'translateX(-50%)',
+                      fontWeight: 600
+                    }}
+                  >
+                    MOST POPULAR
+                  </Tag>
+                )}
+                
+                {isCurrentPlan && (
+                  <Tag 
+                    color="#52c41a" 
+                    style={{ 
+                      position: 'absolute', 
+                      top: -12, 
+                      left: '50%', 
+                      transform: 'translateX(-50%)',
+                      fontWeight: 600
+                    }}
+                  >
+                    CURRENT PLAN
+                  </Tag>
+                )}
+
+                <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 48,
+                    height: 48,
+                    borderRadius: '50%',
+                    background: getPlanBgColor(plan),
+                    border: `2px solid ${getPlanColor(plan)}`,
+                    marginBottom: 12
+                  }}>
+                    <span style={{ fontSize: 24, color: getPlanColor(plan) }}>
+                      {planData.icon}
+                    </span>
+                  </div>
+                  <Title level={4} style={{ margin: 0 }}>
+                    {planData.name}
+                  </Title>
+                  <Title level={2} style={{ margin: '8px 0 0 0', color: getPlanColor(plan) }}>
+                    {planData.price}
+                  </Title>
+                </div>
+
+                <Space direction="vertical" size={8} style={{ width: '100%', marginBottom: 24 }}>
+                  {planData.features.map((feat, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      <CheckOutlined style={{ 
+                        color: feat.included ? '#52c41a' : '#d9d9d9',
+                        marginTop: 4
+                      }} />
+                      <Text 
+                        style={{ 
+                          color: feat.included ? 'inherit' : '#bfbfbf',
+                          textDecoration: feat.included ? 'none' : 'line-through'
+                        }}
+                      >
+                        {feat.name}
+                      </Text>
+                    </div>
+                  ))}
+                </Space>
+
+                {canUpgrade ? (
+                  <Button
+                    type={isPopular ? 'primary' : 'default'}
+                    size="large"
+                    block
+                    onClick={() => handleUpgrade(plan as 'pro' | 'agency')}
+                  >
+                    Upgrade to {planData.name}
+                  </Button>
+                ) : (
+                  <Button size="large" block disabled>
+                    {isCurrentPlan ? 'Current Plan' : 'N/A'}
+                  </Button>
+                )}
+              </Card>
+            </Col>
+          );
+        })}
+      </Row>
+
+      {/* Footer */}
+      <Divider style={{ margin: '16px 0' }} />
+      <Text type="secondary" style={{ display: 'block', textAlign: 'center' }}>
+        Subscriptions are managed through the{' '}
+        <a href={MARKETPLACE_URL} target="_blank" rel="noopener noreferrer">
+          GoHighLevel Marketplace
+        </a>
+        . Cancel anytime.
+      </Text>
+    </Modal>
   );
 };
 

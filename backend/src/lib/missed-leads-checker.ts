@@ -11,7 +11,7 @@ import { checkAndAlertWaitingLeads } from './slack-alerts';
 const MISSED_THRESHOLD_SECONDS = 3600; // 1 hour
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // Check every 5 minutes
 
-let checkInterval: NodeJS.Timer | null = null;
+let checkInterval: ReturnType<typeof setInterval> | null = null;
 
 /**
  * Get all active locations that have conversations

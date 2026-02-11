@@ -241,7 +241,7 @@ metricsRouter.get(
           messageType: msg.type
         }));
     } catch (err) {
-      logger.warn('Failed to fetch messages from GHL', { conversationId }, err as Error);
+      logger.error('Failed to fetch messages from GHL', { conversationId }, err as Error);
       // Return conversation without messages if GHL fails
     }
     

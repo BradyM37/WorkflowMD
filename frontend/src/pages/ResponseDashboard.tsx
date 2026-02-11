@@ -82,6 +82,8 @@ import ROIDashboard from '../components/ROIDashboard';
 import UserStatsModal from '../components/UserStatsModal';
 import GoalProgressCard from '../components/GoalProgressCard';
 import InsightsPanel from '../components/InsightsPanel';
+import BenchmarkBadge from '../components/BenchmarkBadge';
+import GoalSettingModal from '../components/GoalSettingModal';
 import DateRangePickerComponent, { DateRange } from '../components/DateRangePicker';
 import ActivityFeed from '../components/ActivityFeed';
 import AnimatedStatCard from '../components/AnimatedStatCard';
@@ -260,6 +262,7 @@ const ResponseDashboard: React.FC = () => {
   const [notifiedLeads, setNotifiedLeads] = useState<Set<string>>(new Set());
   const [pdfLoading, setPdfLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{ id: string; name: string } | null>(null);
+  const [goalModalVisible, setGoalModalVisible] = useState(false);
   
   // Confetti celebration handler for 100% response rate
   const handlePerfectScore = useCallback(() => {
@@ -756,12 +759,22 @@ const ResponseDashboard: React.FC = () => {
         onClose={() => setSelectedUser(null)}
       />
       
+      {/* Goal Setting Modal */}
+      <GoalSettingModal
+        visible={goalModalVisible}
+        onClose={() => setGoalModalVisible(false)}
+        currentGoal={300}
+      />
+      
       {/* Header */}
       <div className="dashboard-header">
         <div className="header-left">
-          <Title level={2} style={{ margin: 0, color: colors.text }}>
-            <ThunderboltOutlined style={{ color: '#faad14' }} /> Response Tracker
-          </Title>
+          <Space align="center" size="middle">
+            <Title level={2} style={{ margin: 0, color: colors.text }}>
+              <ThunderboltOutlined style={{ color: '#faad14' }} /> Response Tracker
+            </Title>
+            <BenchmarkBadge size="small" showTrend={true} />
+          </Space>
           <Text type="secondary" className="header-subtitle">
             {SPEED_TO_LEAD_STAT}
           </Text>
@@ -834,6 +847,12 @@ const ResponseDashboard: React.FC = () => {
                   setPdfLoading(false);
                 }
               }}
+            />
+          </Tooltip>
+          <Tooltip title="Set Response Goal">
+            <Button 
+              icon={<TrophyOutlined />}
+              onClick={() => setGoalModalVisible(true)}
             />
           </Tooltip>
           <Tooltip title="Alert Settings">

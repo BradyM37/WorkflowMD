@@ -11,7 +11,7 @@ const SYNC_INTERVAL_MS = 60 * 1000; // 1 minute
 const MAX_CONCURRENT_SYNCS = 5;
 
 let isRunning = false;
-let syncInterval: NodeJS.Timer | null = null;
+let syncInterval: ReturnType<typeof setInterval> | null = null;
 
 /**
  * Get locations that need syncing
