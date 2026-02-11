@@ -62,21 +62,32 @@ export async function fetchWorkflows(locationId: string): Promise<any[]> {
   try {
     const token = await getValidToken(locationId);
     
-    // GHL API endpoint for workflows
-    const response = await axios.get(`${GHL_API_BASE}/workflows`, {
+    // GHL API endpoint for workflows - v2 API
+    console.log('Fetching workflows from GHL:', { locationId, token: token.substring(0, 20) + '...' });
+    
+    const response = await axios.get(`${GHL_API_BASE}/workflows/`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Version': '2021-07-28',
-        'Content-Type': 'application/json'
+        'Accept': 'application/json'
       },
       params: {
         locationId: locationId
       }
     });
+    
+    console.log('GHL workflows response:', response.status, response.data);
 
     return response.data.workflows || [];
   } catch (error: any) {
-    console.error('Fetch workflows error:', error.response?.data || error.message);
+    console.error('Fetch workflows error:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      url: error.config?.url,
+      params: error.config?.params,
+      message: error.message
+    });
     
     // Return mock data for development
     if (process.env.NODE_ENV === 'development') {
