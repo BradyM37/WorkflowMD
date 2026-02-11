@@ -453,6 +453,17 @@ setupProcessErrorHandlers();
   }
 })();
 
+// Initialize weekly report scheduler
+(async () => {
+  try {
+    const { initWeeklyReportScheduler } = await import('./lib/scheduled-reports');
+    initWeeklyReportScheduler();
+    logger.info('Weekly report scheduler initialized');
+  } catch (error) {
+    logger.error('Failed to initialize weekly report scheduler', {}, error as Error);
+  }
+})();
+
 // Start server
 const server = app.listen(PORT, () => {
   logger.info('🚀 Server started', {

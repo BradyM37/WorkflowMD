@@ -31,7 +31,7 @@ import {
   ClockCircleOutlined,
   TeamOutlined,
   MessageOutlined,
-  TrendingUpOutlined,
+  RiseOutlined,
   BarChartOutlined,
   ThunderboltOutlined,
   ReloadOutlined

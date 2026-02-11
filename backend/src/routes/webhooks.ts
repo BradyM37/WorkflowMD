@@ -49,7 +49,7 @@ async function logWebhook(
     );
   } catch (error) {
     // Don't fail the webhook if logging fails
-    logger.warn('Failed to log webhook', { source, eventType }, error as Error);
+    logger.warn('Failed to log webhook', { source, eventType, error: (error as Error).message });
   }
 }
 

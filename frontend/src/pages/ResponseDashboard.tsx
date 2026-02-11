@@ -50,7 +50,8 @@ import {
   SettingOutlined,
   DownloadOutlined,
   FilePdfOutlined,
-  MenuUnfoldOutlined
+  MenuUnfoldOutlined,
+  DollarOutlined
 } from '@ant-design/icons';
 import { 
   LineChart, 
@@ -77,6 +78,7 @@ import { useNavigate } from 'react-router-dom';
 import ResponseHeatmap from '../components/ResponseHeatmap';
 import PeriodComparison from '../components/PeriodComparison';
 import ConversationModal from '../components/ConversationModal';
+import ROIDashboard from '../components/ROIDashboard';
 import UserStatsModal from '../components/UserStatsModal';
 import GoalProgressCard from '../components/GoalProgressCard';
 import InsightsPanel from '../components/InsightsPanel';
@@ -1289,6 +1291,17 @@ const ResponseDashboard: React.FC = () => {
                   </Col>
                 </Row>
               )
+            },
+            {
+              key: 'roi',
+              label: (
+                <Space>
+                  <DollarOutlined style={{ color: '#52c41a' }} />
+                  <span>Revenue & ROI</span>
+                  <Tag color="gold" style={{ marginLeft: 4, fontSize: 10 }}>NEW</Tag>
+                </Space>
+              ),
+              children: <ROIDashboard days={selectedDays} />
             }
           ]}
         />
