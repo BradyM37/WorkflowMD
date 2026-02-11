@@ -85,6 +85,22 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     req.userEmail = payload.email;
     req.user = result.rows[0];
     
+    // Also get GHL connection if exists
+    try {
+      const ghlResult = await pool.query(
+        'SELECT location_id, subscription_status, plan_type FROM oauth_tokens WHERE user_id = $1',
+        [payload.userId]
+      );
+      
+      if (ghlResult.rows.length > 0) {
+        req.locationId = ghlResult.rows[0].location_id;
+        req.subscriptionStatus = ghlResult.rows[0].subscription_status || 'free';
+        req.planType = ghlResult.rows[0].plan_type || 'free';
+      }
+    } catch (ghlError) {
+      logger.debug('Could not fetch GHL connection', { userId: payload.userId });
+    }
+    
     next();
   } catch (error) {
     logger.error('Authentication error', {
