@@ -22,6 +22,7 @@ import Analysis from './pages/Analysis';
 import Pricing from './pages/Pricing';
 import Settings from './pages/Settings';
 import WorkflowAnalysis from './pages/WorkflowAnalysis';
+import ResponseDashboard from './pages/ResponseDashboard';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import PrivateRoute from './components/PrivateRoute';
@@ -83,7 +84,7 @@ function AppHeader() {
               
               <Button 
                 icon={<LineChartOutlined />}
-                onClick={() => navigate('/workflow-graph')}
+                onClick={() => navigate('/response-tracker')}
                 type="primary"
                 style={{ 
                   background: isDarkMode ? '#667eea' : 'rgba(255,255,255,0.95)', 
@@ -92,7 +93,7 @@ function AppHeader() {
                   border: 'none'
                 }}
               >
-                View Graph
+                ⚡ Response Tracker
               </Button>
               <Button 
                 icon={<DashboardOutlined />}
@@ -174,14 +175,14 @@ function AppHeader() {
           <Button 
             icon={<LineChartOutlined />}
             onClick={() => {
-              navigate('/workflow-graph');
+              navigate('/response-tracker');
               setMobileMenuVisible(false);
             }}
             type="primary"
             size="large"
             block
           >
-            View Workflow Graph
+            ⚡ Response Tracker
           </Button>
 
           <Button 
@@ -323,6 +324,14 @@ function AppContent() {
                 element={
                   <PrivateRoute>
                     <WorkflowAnalysis />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/response-tracker"
+                element={
+                  <PrivateRoute>
+                    <ResponseDashboard />
                   </PrivateRoute>
                 }
               />

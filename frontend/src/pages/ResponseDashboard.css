@@ -1,0 +1,149 @@
+.response-dashboard {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.main-stats .stat-card {
+  height: 100%;
+  border-radius: 12px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.main-stats .stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.main-stats .stat-card.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.main-stats .stat-card.primary .ant-statistic-title,
+.main-stats .stat-card.primary .ant-statistic-content {
+  color: white !important;
+}
+
+.main-stats .stat-card.warning {
+  border-left: 4px solid #ff4d4f;
+}
+
+.chart-card {
+  border-radius: 12px;
+}
+
+.chart-card .ant-card-head-title {
+  font-weight: 600;
+}
+
+/* Team leaderboard styles */
+.ant-table-row:first-child {
+  background: linear-gradient(90deg, rgba(82, 196, 26, 0.1) 0%, transparent 100%);
+}
+
+/* Missed leads urgency */
+.ant-table-row .ant-typography-danger {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] .stat-card {
+  background: #1f1f1f;
+  border-color: #333;
+}
+
+[data-theme='dark'] .chart-card {
+  background: #1f1f1f;
+  border-color: #333;
+}
+
+[data-theme='dark'] .main-stats .stat-card.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .response-dashboard {
+    padding: 16px;
+  }
+  
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .dashboard-header > div:last-child {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+/* Speed grade badges */
+.ant-tag {
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+/* Sync button animation */
+.ant-btn .anticon-sync {
+  transition: transform 0.3s;
+}
+
+.ant-btn:hover .anticon-sync {
+  transform: rotate(180deg);
+}
+
+/* Card hover effects */
+.ant-card {
+  transition: all 0.3s ease;
+}
+
+/* Recharts tooltip styling */
+.recharts-tooltip-wrapper {
+  z-index: 1000 !important;
+}
+
+.recharts-default-tooltip {
+  background: rgba(0, 0, 0, 0.85) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 12px !important;
+}
+
+.recharts-tooltip-label {
+  color: white !important;
+  font-weight: 600 !important;
+  margin-bottom: 4px !important;
+}
+
+.recharts-tooltip-item {
+  color: #52c41a !important;
+}
