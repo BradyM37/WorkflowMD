@@ -12,7 +12,6 @@ import {
   Divider,
   Alert,
   Spin,
-  Tooltip,
   Row,
   Col,
   Radio,
@@ -39,15 +38,7 @@ import { useNavigate } from 'react-router-dom';
 
 const { Title, Text, Paragraph } = Typography;
 
-interface AlertSettings {
-  warningThreshold: number;
-  criticalThreshold: number;
-  missedThreshold: number;
-  emailAlerts: boolean;
-  slackWebhookUrl?: string;
-  alertWaitThreshold: number;
-  targetResponseTime: number;
-}
+// AlertSettings interface documented in API types
 
 const GOAL_PRESETS = [
   { value: 60, label: '1 min', description: 'Elite' },
@@ -62,13 +53,13 @@ const SLACK_ALERT_PRESETS = [
 ];
 
 const ResponseSettings: React.FC = () => {
-  const { isDarkMode } = useTheme();
+  useTheme(); // Theme context for future use
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [form] = Form.useForm();
 
   // Fetch current settings
-  const { data: settingsData, isLoading } = useQuery(
+  const { isLoading } = useQuery(
     'response-settings',
     () => api.get('/api/settings/response').then(res => res.data.data),
     {

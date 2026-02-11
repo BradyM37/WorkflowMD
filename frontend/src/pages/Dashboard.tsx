@@ -194,7 +194,6 @@ const Dashboard: React.FC = () => {
   const categories = Array.from(new Set(workflows?.map(w => w.category).filter(Boolean)));
 
   const handleAnalyze = async (workflow: Workflow) => {
-    console.log('Analyzing workflow:', workflow.id);
     setAnalyzing(workflow.id);
     toast.info('Analyzing workflow...');
 

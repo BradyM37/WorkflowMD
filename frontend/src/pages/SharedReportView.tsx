@@ -19,7 +19,6 @@ import {
   Tag,
   Progress,
   Button,
-  Space,
   Divider
 } from 'antd';
 import {
@@ -27,13 +26,12 @@ import {
   CheckCircleOutlined,
   WarningOutlined,
   DownloadOutlined,
-  TeamOutlined,
   MessageOutlined,
   TrophyOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 interface ReportData {
   locationName: string;
