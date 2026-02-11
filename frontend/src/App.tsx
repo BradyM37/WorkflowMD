@@ -370,10 +370,10 @@ function AppContent() {
         padding: 'clamp(12px, 3vw, 24px)'
       }}>
         <div style={{ fontSize: 'clamp(12px, 2.5vw, 14px)' }}>
-          WorkflowMD ©2026 - Find workflow issues in seconds
+          WorkflowMD ©2026 - Speed-to-Lead Analytics for GHL
           <br />
           <span style={{ fontSize: 'clamp(10px, 2vw, 12px)', color: isDarkMode ? '#595959' : '#8c8c8c' }}>
-            Analyze • Optimize • Scale
+            Respond Faster • Win More Leads • Track Performance
           </span>
         </div>
       </Footer>
