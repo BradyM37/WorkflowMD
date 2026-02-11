@@ -648,6 +648,18 @@ authRouter.get('/oauth/callback', asyncHandler(async (req: any, res: any) => {
       requestId: req.id
     });
 
+    // Trigger initial conversation sync in background (don't await)
+    (async () => {
+      try {
+        const { syncConversations } = await import('../lib/response-analyzer');
+        logger.info('Starting initial conversation sync', { locationId: tokens.locationId });
+        await syncConversations(tokens.locationId);
+        logger.info('Initial conversation sync completed', { locationId: tokens.locationId });
+      } catch (syncError) {
+        logger.error('Initial sync failed (non-blocking)', { locationId: tokens.locationId }, syncError as Error);
+      }
+    })();
+
     // Generate JWT for the redirect (and create session if needed)
     const { generateJWT, createSession } = await import('../lib/user-auth');
     const userForToken = { 

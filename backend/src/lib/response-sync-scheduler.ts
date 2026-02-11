@@ -7,8 +7,8 @@ import { pool } from './database';
 import { logger } from './logger';
 import { syncConversations } from './response-analyzer';
 
-const SYNC_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
-const MAX_CONCURRENT_SYNCS = 3;
+const SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+const MAX_CONCURRENT_SYNCS = 5;
 
 let isRunning = false;
 let syncInterval: NodeJS.Timer | null = null;
@@ -91,10 +91,10 @@ export function startSyncScheduler(): void {
     intervalMinutes: SYNC_INTERVAL_MS / 60000 
   });
   
-  // Run first sync after 2 minutes (let server warm up)
+  // Run first sync after 30 seconds (let server warm up)
   setTimeout(() => {
     runSyncCycle();
-  }, 2 * 60 * 1000);
+  }, 30 * 1000);
   
   // Then run every SYNC_INTERVAL_MS
   syncInterval = setInterval(runSyncCycle, SYNC_INTERVAL_MS);
