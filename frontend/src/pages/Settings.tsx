@@ -822,6 +822,100 @@ const Settings: React.FC = () => {
                 </Space>
               </Card>
             </Tabs.TabPane>
+
+            {/* White-Label Branding Tab */}
+            <Tabs.TabPane 
+              tab={
+                <span>
+                  <BgColorsOutlined /> Branding
+                  {subscription === 'pro' && <CrownOutlined style={{ marginLeft: 4, color: '#faad14', fontSize: 12 }} />}
+                </span>
+              } 
+              key="branding"
+            >
+              <Card>
+                <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                  <Alert
+                    message="White-Label Your Reports"
+                    description="Brand your client reports with your agency's logo, colors, and company name. Create shareable links for clients."
+                    type="info"
+                    showIcon
+                    icon={<BgColorsOutlined />}
+                  />
+
+                  <div style={{
+                    padding: '24px',
+                    background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+                    borderRadius: '12px',
+                    textAlign: 'center'
+                  }}>
+                    <BgColorsOutlined style={{ fontSize: 48, color: '#667eea', marginBottom: 16 }} />
+                    <Title level={4}>White-Label Branding</Title>
+                    <Paragraph type="secondary" style={{ marginBottom: 24 }}>
+                      Customize how your reports look when shared with clients.
+                      Add your logo, brand colors, and remove WorkflowMD branding.
+                    </Paragraph>
+
+                    <Space direction="vertical" size="small" style={{ marginBottom: 24 }}>
+                      <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Custom logo on all reports</Text>
+                      <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Your brand colors throughout</Text>
+                      <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Remove "Powered by WorkflowMD"</Text>
+                      <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Shareable client report links</Text>
+                    </Space>
+
+                    {subscription === 'pro' ? (
+                      <Button 
+                        type="primary" 
+                        size="large" 
+                        icon={<BgColorsOutlined />}
+                        onClick={() => navigate('/branding')}
+                      >
+                        Manage Branding Settings
+                      </Button>
+                    ) : (
+                      <Button 
+                        type="primary" 
+                        size="large" 
+                        icon={<CrownOutlined />}
+                        onClick={() => navigate('/pricing')}
+                      >
+                        Upgrade to Pro - $50/month
+                      </Button>
+                    )}
+                  </div>
+
+                  {subscription === 'pro' && (
+                    <>
+                      <Divider />
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        padding: '16px',
+                        background: '#f5f5f5',
+                        borderRadius: '8px'
+                      }}>
+                        <Space>
+                          <ShareAltOutlined style={{ fontSize: 24, color: '#667eea' }} />
+                          <div>
+                            <Text strong style={{ display: 'block' }}>Client Report Links</Text>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              Create shareable links for your clients
+                            </Text>
+                          </div>
+                        </Space>
+                        <Button 
+                          type="primary"
+                          onClick={() => navigate('/branding')}
+                        >
+                          Manage Links
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </Space>
+              </Card>
+            </Tabs.TabPane>
           </Tabs>
         </Col>
       </Row>
