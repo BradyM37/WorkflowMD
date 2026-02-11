@@ -61,6 +61,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
+// Trust proxy - required for Render and other reverse proxy setups
+// This allows express-rate-limit to correctly identify clients via X-Forwarded-For
+app.set('trust proxy', 1);
+
 // Initialize Sentry for error tracking (production)
 if (process.env.SENTRY_DSN && NODE_ENV === 'production') {
   Sentry.init({ 
@@ -174,6 +178,21 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec, {
  */
 app.get('/openapi.json', (req, res) => {
   res.json(openApiSpec);
+});
+
+// ===== ROOT ROUTE =====
+
+/**
+ * Root route - redirect to API docs or return service info
+ */
+app.get('/', (_req, res) => {
+  ApiResponse.success(res, {
+    service: 'GHL Workflow Debugger API',
+    version: '1.0.0',
+    status: 'running',
+    docs: '/api-docs',
+    health: '/health'
+  });
 });
 
 // ===== HEALTH CHECK ENDPOINTS =====
