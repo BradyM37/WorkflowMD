@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Card, Typography, Space, List, Alert } from 'antd';
+import { Button, Card, Typography, Space, List, Alert, theme } from 'antd';
 import { 
   ThunderboltOutlined,
   CheckCircleOutlined,
@@ -10,23 +10,26 @@ import {
   TeamOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 const { Title, Text, Paragraph } = Typography;
+const { useToken } = theme;
 
 const ConnectGHL: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { token } = useToken();
 
   const handleConnect = () => {
-    // Set GHL as connected for demo mode
-    localStorage.setItem('location_id', 'demo_location_123');
-    localStorage.setItem('ghl_connected', 'true');
+    // Clear demo mode before starting OAuth
+    localStorage.removeItem('demo_mode');
+    localStorage.removeItem('location_id');
+    localStorage.removeItem('ghl_connected');
     
-    // In production, redirect to GHL OAuth
-    // window.location.href = process.env.REACT_APP_GHL_INSTALL_URL || '#';
-    
-    // For demo, go straight to dashboard
-    navigate('/dashboard');
+    // Redirect to backend OAuth endpoint which handles GHL redirect
+    // Use axios baseURL to get the API server address
+    const backendUrl = api.defaults.baseURL || 'https://ghlworkflowdebugger.onrender.com';
+    window.location.href = `${backendUrl}/auth/ghl/login`;
   };
 
   const handleSkipForDemo = () => {
@@ -92,7 +95,7 @@ const ConnectGHL: React.FC = () => {
               <Title level={2} style={{ marginBottom: '8px' }}>
                 Connect Your GHL Account
               </Title>
-              <Paragraph style={{ color: '#595959', fontSize: '16px' }}>
+              <Paragraph style={{ color: token.colorTextSecondary, fontSize: '16px' }}>
                 Welcome, {user?.name || 'there'}! Let's connect your GoHighLevel account 
                 to start analyzing workflows.
               </Paragraph>
@@ -110,8 +113,8 @@ const ConnectGHL: React.FC = () => {
                   <List.Item style={{ border: 'none', padding: '12px 0' }}>
                     <List.Item.Meta
                       avatar={item.icon}
-                      title={<Text strong>{item.title}</Text>}
-                      description={<Text style={{ color: '#595959' }}>{item.description}</Text>}
+                      title={<Text strong style={{ color: token.colorText }}>{item.title}</Text>}
+                      description={<Text style={{ color: token.colorTextSecondary }}>{item.description}</Text>}
                     />
                   </List.Item>
                 )}
@@ -150,24 +153,29 @@ const ConnectGHL: React.FC = () => {
               <Button 
                 type="link" 
                 onClick={handleSkipForDemo}
-                style={{ color: '#8c8c8c' }}
+                style={{ color: token.colorTextTertiary }}
               >
                 Skip for now (Demo Mode)
               </Button>
             </div>
 
             {/* What Happens Next */}
-            <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '8px' }}>
+            <div style={{ 
+              background: token.colorBgContainer, 
+              padding: '20px', 
+              borderRadius: '8px',
+              border: `1px solid ${token.colorBorderSecondary}`
+            }}>
               <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                <Text strong style={{ fontSize: '15px' }}>
+                <Text strong style={{ fontSize: '15px', color: token.colorText }}>
                   What Happens Next:
                 </Text>
                 <Space align="start">
                   <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '16px', marginTop: '4px' }} />
                   <div>
-                    <Text strong>You'll be redirected to GoHighLevel</Text>
+                    <Text strong style={{ color: token.colorText }}>You'll be redirected to GoHighLevel</Text>
                     <br />
-                    <Text style={{ color: '#595959', fontSize: '13px' }}>
+                    <Text style={{ color: token.colorTextSecondary, fontSize: '13px' }}>
                       Securely authorize our app through GHL's OAuth
                     </Text>
                   </div>
@@ -175,9 +183,9 @@ const ConnectGHL: React.FC = () => {
                 <Space align="start">
                   <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '16px', marginTop: '4px' }} />
                   <div>
-                    <Text strong>Select Your Location</Text>
+                    <Text strong style={{ color: token.colorText }}>Select Your Location</Text>
                     <br />
-                    <Text style={{ color: '#595959', fontSize: '13px' }}>
+                    <Text style={{ color: token.colorTextSecondary, fontSize: '13px' }}>
                       Choose which GHL location to analyze
                     </Text>
                   </div>
@@ -185,9 +193,9 @@ const ConnectGHL: React.FC = () => {
                 <Space align="start">
                   <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '16px', marginTop: '4px' }} />
                   <div>
-                    <Text strong>Start Analyzing</Text>
+                    <Text strong style={{ color: token.colorText }}>Start Analyzing</Text>
                     <br />
-                    <Text style={{ color: '#595959', fontSize: '13px' }}>
+                    <Text style={{ color: token.colorTextSecondary, fontSize: '13px' }}>
                       Return here and scan your first workflow
                     </Text>
                   </div>
@@ -197,9 +205,9 @@ const ConnectGHL: React.FC = () => {
 
             {/* Support Link */}
             <div style={{ textAlign: 'center' }}>
-              <Text style={{ fontSize: '12px', color: '#8c8c8c' }}>
+              <Text style={{ fontSize: '12px', color: token.colorTextTertiary }}>
                 Need help connecting?{' '}
-                <a href="mailto:support@ghlworkflowdebugger.com" style={{ color: '#667eea' }}>
+                <a href="mailto:support@ghlworkflowdebugger.com" style={{ color: token.colorPrimary }}>
                   Contact Support
                 </a>
               </Text>

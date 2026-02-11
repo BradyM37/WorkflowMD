@@ -348,36 +348,129 @@ async function processStripeEvent(event: Stripe.Event): Promise<void> {
 
 /**
  * POST /webhooks/ghl
- * Handle GHL webhook events (for future use)
+ * Handle GHL webhook events (subscriptions, contacts, etc.)
  */
 webhookRouter.post('/ghl', async (req, res) => {
+  const signature = req.headers['x-ghl-signature'] as string;
+  
   logger.info('GHL webhook received', {
-    body: req.body,
-    headers: req.headers,
+    eventType: req.body.type,
+    locationId: req.body.locationId,
     ip: req.ip
   });
 
-  // TODO: Implement GHL webhook signature verification
-  // TODO: Process workflow update events
-  // TODO: Sync workflow changes in real-time
+  // Verify webhook signature if shared secret is configured
+  if (process.env.GHL_SHARED_SECRET && signature) {
+    const crypto = require('crypto');
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.GHL_SHARED_SECRET)
+      .update(JSON.stringify(req.body))
+      .digest('hex');
+    
+    if (signature !== expectedSignature) {
+      logger.warn('GHL webhook signature mismatch', { ip: req.ip });
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
+  }
 
   try {
-    const eventType = req.body.type || req.headers['x-ghl-event-type'];
+    const eventType = req.body.type;
     const locationId = req.body.locationId || req.body.location_id;
+    const data = req.body.data || req.body;
 
-    logger.info('GHL event details', {
-      eventType,
-      locationId
-    });
+    // Process GHL subscription/payment events
+    switch (eventType) {
+      case 'SaasPlanCreate':
+      case 'ORDER_COMPLETED': {
+        // User subscribed to Pro plan via GHL
+        const planName = data.planName || data.plan_name || '';
+        const isPro = planName.toLowerCase().includes('pro');
+        
+        if (locationId) {
+          await retryQuery(
+            () => pool.query(
+              `UPDATE oauth_tokens 
+               SET subscription_status = $1, 
+                   ghl_subscription_id = $2,
+                   updated_at = NOW() 
+               WHERE location_id = $3`,
+              [isPro ? 'pro' : 'free', data.subscriptionId || data.orderId, locationId]
+            ),
+            3,
+            1000
+          );
+          
+          logger.info('✅ GHL subscription activated', {
+            locationId,
+            plan: isPro ? 'pro' : 'free',
+            eventType
+          });
+        }
+        break;
+      }
 
-    // Acknowledge receipt immediately
+      case 'OrderStatusUpdate': {
+        const status = data.status?.toLowerCase();
+        const locationId = data.locationId || data.location_id;
+        
+        if (locationId) {
+          if (status === 'cancelled' || status === 'refunded' || status === 'failed') {
+            await retryQuery(
+              () => pool.query(
+                `UPDATE oauth_tokens 
+                 SET subscription_status = 'free', updated_at = NOW() 
+                 WHERE location_id = $1`,
+                [locationId]
+              ),
+              3,
+              1000
+            );
+            
+            logger.info('❌ GHL subscription cancelled', {
+              locationId,
+              status,
+              eventType
+            });
+          }
+        }
+        break;
+      }
+
+      case 'SaasSubscriptionCancel':
+      case 'SUBSCRIPTION_CANCELLED': {
+        if (locationId) {
+          await retryQuery(
+            () => pool.query(
+              `UPDATE oauth_tokens 
+               SET subscription_status = 'free', 
+                   subscription_ends_at = NOW(),
+                   updated_at = NOW() 
+               WHERE location_id = $1`,
+              [locationId]
+            ),
+            3,
+            1000
+          );
+          
+          logger.info('❌ GHL subscription cancelled', { locationId, eventType });
+        }
+        break;
+      }
+
+      default:
+        logger.debug('Unhandled GHL event type', { eventType, locationId });
+    }
+
+    // Acknowledge receipt
     res.json({ 
       received: true,
       eventType,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    logger.error('GHL webhook processing error', {}, error as Error);
+    logger.error('GHL webhook processing error', {
+      eventType: req.body.type
+    }, error as Error);
     res.status(500).json({ error: 'Processing failed' });
   }
 });
