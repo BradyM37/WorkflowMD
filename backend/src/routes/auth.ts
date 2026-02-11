@@ -605,7 +605,13 @@ authRouter.get('/oauth/callback', asyncHandler(async (req: any, res: any) => {
 
       // Generate session tokens
       const { generateJWT, generateRefreshToken } = await import('../lib/user-auth');
-      const user = { id: userId, email: `${tokens.locationId}@ghl.local` };
+      const user = { 
+        id: userId!, 
+        email: `${tokens.locationId}@ghl.local`,
+        email_verified: true,
+        created_at: new Date(),
+        updated_at: new Date()
+      };
       const jwtToken = generateJWT(user);
       const refreshToken = generateRefreshToken(user);
 
