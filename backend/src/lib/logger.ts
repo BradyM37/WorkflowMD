@@ -20,7 +20,7 @@ interface LogContext {
 }
 
 class Logger {
-  private serviceName: string = 'ghl-workflow-debugger';
+  private serviceName: string = 'workflowmd';
   private env: string = process.env.NODE_ENV || 'development';
 
   private formatLog(level: LogLevel, message: string, context?: LogContext, error?: Error): string {

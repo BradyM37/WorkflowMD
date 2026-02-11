@@ -82,7 +82,7 @@ const Login: React.FC = () => {
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
               }}>
-                GHL Workflow Debugger
+                WorkflowMD
               </Title>
               
               <Paragraph style={{ fontSize: '20px', color: '#595959', marginBottom: '32px' }}>

@@ -1,0 +1,44 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="glassGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e0e0e0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Rounded square background -->
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="url(#bgGradient)"/>
+  
+  <!-- Workflow nodes (3 connected circles) -->
+  <!-- Node 1 - Top -->
+  <circle cx="256" cy="140" r="32" fill="white" fill-opacity="0.9"/>
+  <circle cx="256" cy="140" r="20" fill="#667eea"/>
+  
+  <!-- Node 2 - Bottom Left -->
+  <circle cx="170" cy="280" r="32" fill="white" fill-opacity="0.9"/>
+  <circle cx="170" cy="280" r="20" fill="#667eea"/>
+  
+  <!-- Node 3 - Bottom Right (with checkmark - the "fixed" one) -->
+  <circle cx="342" cy="280" r="32" fill="white" fill-opacity="0.9"/>
+  <circle cx="342" cy="280" r="20" fill="#22c55e"/>
+  
+  <!-- Connection lines -->
+  <line x1="240" y1="165" x2="186" y2="255" stroke="white" stroke-width="6" stroke-opacity="0.7" stroke-linecap="round"/>
+  <line x1="272" y1="165" x2="326" y2="255" stroke="white" stroke-width="6" stroke-opacity="0.7" stroke-linecap="round"/>
+  <line x1="202" y1="280" x2="310" y2="280" stroke="white" stroke-width="6" stroke-opacity="0.7" stroke-linecap="round"/>
+  
+  <!-- Checkmark on green node -->
+  <path d="M328 280 L338 290 L358 268" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  
+  <!-- Magnifying glass -->
+  <circle cx="320" cy="340" r="70" stroke="white" stroke-width="12" fill="none" fill-opacity="0"/>
+  <line x1="368" y1="388" x2="420" y2="440" stroke="white" stroke-width="20" stroke-linecap="round"/>
+  
+  <!-- Glass shine effect -->
+  <ellipse cx="290" cy="315" rx="20" ry="12" fill="white" fill-opacity="0.3" transform="rotate(-30 290 315)"/>
+</svg>

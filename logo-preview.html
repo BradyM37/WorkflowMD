@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Logo Preview</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #1a1a2e;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .logo-container {
+      background: #2d2d44;
+      padding: 40px;
+      border-radius: 20px;
+      margin: 20px;
+    }
+    h2 { color: white; margin-bottom: 30px; }
+    .sizes { display: flex; gap: 40px; align-items: flex-end; }
+    .size-label { color: #888; text-align: center; margin-top: 10px; }
+    canvas { border-radius: 20px; }
+  </style>
+</head>
+<body>
+  <h2>GHL Workflow Debugger - Logo</h2>
+  
+  <div class="logo-container">
+    <div class="sizes">
+      <div>
+        <canvas id="logo512" width="512" height="512"></canvas>
+        <div class="size-label">512x512 (Marketplace)</div>
+      </div>
+      <div>
+        <canvas id="logo256" width="256" height="256"></canvas>
+        <div class="size-label">256x256</div>
+      </div>
+      <div>
+        <canvas id="logo128" width="128" height="128"></canvas>
+        <div class="size-label">128x128</div>
+      </div>
+    </div>
+  </div>
+
+  <p style="color: #888;">Right-click on a logo → "Save image as" to download PNG</p>
+
+  <script>
+    function drawLogo(ctx, size) {
+      const s = size / 512; // Scale factor
+      
+      // Background gradient
+      const bgGrad = ctx.createLinearGradient(0, 0, size, size);
+      bgGrad.addColorStop(0, '#667eea');
+      bgGrad.addColorStop(1, '#764ba2');
+      
+      // Rounded rect background
+      ctx.beginPath();
+      const radius = 96 * s;
+      const margin = 16 * s;
+      ctx.roundRect(margin, margin, size - margin*2, size - margin*2, radius);
+      ctx.fillStyle = bgGrad;
+      ctx.fill();
+      
+      // Workflow nodes
+      function drawNode(x, y, innerColor) {
+        // Outer circle
+        ctx.beginPath();
+        ctx.arc(x * s, y * s, 32 * s, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.fill();
+        // Inner circle
+        ctx.beginPath();
+        ctx.arc(x * s, y * s, 20 * s, 0, Math.PI * 2);
+        ctx.fillStyle = innerColor;
+        ctx.fill();
+      }
+      
+      // Connection lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+      ctx.lineWidth = 6 * s;
+      ctx.lineCap = 'round';
+      
+      ctx.beginPath();
+      ctx.moveTo(240 * s, 165 * s);
+      ctx.lineTo(186 * s, 255 * s);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(272 * s, 165 * s);
+      ctx.lineTo(326 * s, 255 * s);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(202 * s, 280 * s);
+      ctx.lineTo(310 * s, 280 * s);
+      ctx.stroke();
+      
+      // Draw nodes
+      drawNode(256, 140, '#667eea');
+      drawNode(170, 280, '#667eea');
+      drawNode(342, 280, '#22c55e');
+      
+      // Checkmark on green node
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 5 * s;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(328 * s, 280 * s);
+      ctx.lineTo(338 * s, 290 * s);
+      ctx.lineTo(358 * s, 268 * s);
+      ctx.stroke();
+      
+      // Magnifying glass
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 12 * s;
+      ctx.beginPath();
+      ctx.arc(320 * s, 340 * s, 70 * s, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Handle
+      ctx.lineWidth = 20 * s;
+      ctx.beginPath();
+      ctx.moveTo(368 * s, 388 * s);
+      ctx.lineTo(420 * s, 440 * s);
+      ctx.stroke();
+      
+      // Shine
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.beginPath();
+      ctx.ellipse(290 * s, 315 * s, 20 * s, 12 * s, -30 * Math.PI / 180, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    // Draw all sizes
+    drawLogo(document.getElementById('logo512').getContext('2d'), 512);
+    drawLogo(document.getElementById('logo256').getContext('2d'), 256);
+    drawLogo(document.getElementById('logo128').getContext('2d'), 128);
+  </script>
+</body>
+</html>

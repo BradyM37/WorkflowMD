@@ -1,6 +1,6 @@
 {
   "short_name": "GHL Debugger",
-  "name": "GHL Workflow Debugger",
+  "name": "WorkflowMD",
   "description": "Find and fix GoHighLevel workflow issues in seconds",
   "icons": [
     {

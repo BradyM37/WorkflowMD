@@ -82,7 +82,7 @@ const EmailVerificationSent: React.FC = () => {
                   What to do next:
                 </Text>
                 <Text style={{ color: '#595959', fontSize: '13px' }}>
-                  1. Check your inbox for an email from GHL Workflow Debugger<br />
+                  1. Check your inbox for an email from WorkflowMD<br />
                   2. Click the verification link in the email<br />
                   3. You'll be redirected to login<br />
                   4. Connect your GoHighLevel account and start analyzing

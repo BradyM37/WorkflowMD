@@ -1,5 +1,5 @@
 {
-  "name": "ghl-workflow-debugger-backend",
+  "name": "workflowmd-backend",
   "version": "2.0.0",
   "description": "Backend for GHL Workflow Debugger - Production Hardened",
   "main": "dist/index.js",

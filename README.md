@@ -1,4 +1,4 @@
-# GHL Workflow Debugger
+# WorkflowMD
 
 Analyze and optimize your GoHighLevel workflows. Find issues, improve performance, and prevent failures before they happen.
 

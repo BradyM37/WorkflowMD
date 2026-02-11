@@ -75,7 +75,7 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ run: propRun, onComplet
       content: (
         <div style={{ textAlign: 'center' }}>
           <h2 style={{ fontSize: '24px', marginBottom: '16px' }}>
-            🎉 Welcome to GHL Workflow Debugger!
+            🎉 Welcome to WorkflowMD!
           </h2>
           <p style={{ fontSize: '16px', lineHeight: '1.6' }}>
             Let's take a quick tour to help you find and fix workflow issues faster.
