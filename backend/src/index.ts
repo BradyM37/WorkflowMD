@@ -100,7 +100,19 @@ app.use(compression({
 
 // Security headers
 app.use(helmet({
-  contentSecurityPolicy: false, // We set this manually in securityHeaders
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https:"],
+      // Allow embedding in GHL iframes
+      frameAncestors: ["'self'", "https://*.gohighlevel.com", "https://*.leadconnectorhq.com", "https://*.highlevel.com"]
+    }
+  },
+  // Disable X-Frame-Options so CSP frame-ancestors takes precedence
+  frameguard: false,
   hsts: NODE_ENV === 'production'
 }));
 app.use(securityHeaders);
