@@ -417,6 +417,28 @@ setupProcessErrorHandlers();
   }
 })();
 
+// Initialize response sync scheduler
+(async () => {
+  try {
+    const { startSyncScheduler } = await import('./lib/response-sync-scheduler');
+    startSyncScheduler();
+    logger.info('Response sync scheduler initialized');
+  } catch (error) {
+    logger.error('Failed to initialize response sync scheduler', {}, error as Error);
+  }
+})();
+
+// Initialize missed leads checker
+(async () => {
+  try {
+    const { startMissedLeadsChecker } = await import('./lib/missed-leads-checker');
+    startMissedLeadsChecker();
+    logger.info('Missed leads checker initialized');
+  } catch (error) {
+    logger.error('Failed to initialize missed leads checker', {}, error as Error);
+  }
+})();
+
 // Start server
 const server = app.listen(PORT, () => {
   logger.info('🚀 Server started', {
