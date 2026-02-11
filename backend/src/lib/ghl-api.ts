@@ -62,12 +62,15 @@ export async function fetchWorkflows(locationId: string): Promise<any[]> {
   try {
     const token = await getValidToken(locationId);
     
-    // Note: This is a placeholder endpoint - actual GHL API endpoint may differ
-    const response = await axios.get(`${GHL_API_BASE}/locations/${locationId}/workflows`, {
+    // GHL API endpoint for workflows
+    const response = await axios.get(`${GHL_API_BASE}/workflows`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Version': '2021-07-28',
         'Content-Type': 'application/json'
+      },
+      params: {
+        locationId: locationId
       }
     });
 
