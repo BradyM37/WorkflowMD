@@ -489,9 +489,9 @@ authRouter.post('/refresh', asyncHandler(async (req: any, res: any) => {
 
 /**
  * GET /auth/oauth/login
- * Redirect to OAuth (must be logged in first)
+ * Redirect to OAuth - no auth required, user created during callback
  */
-authRouter.get('/oauth/login', requireAuth, (_req, res) => {
+authRouter.get('/oauth/login', (_req, res) => {
   const clientId = process.env.GHL_CLIENT_ID;
   const redirectUri = process.env.REDIRECT_URI;
   
@@ -572,7 +572,7 @@ authRouter.get('/oauth/callback', asyncHandler(async (req: any, res: any) => {
     const encryptedRefreshToken = encrypt(tokens.refresh_token);
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
 
-    // Get userId from auth cookie if present
+    // Get userId from auth cookie if present, or create new user
     let userId: string | null = null;
     const authToken = req.cookies.auth_token;
     if (authToken) {
@@ -581,11 +581,48 @@ authRouter.get('/oauth/callback', asyncHandler(async (req: any, res: any) => {
         const payload = verifyJWT(authToken);
         userId = payload.userId;
       } catch (error) {
-        // Token invalid, will create legacy connection
+        // Token invalid, will create new user
       }
     }
 
-    // Store tokens linked to user if authenticated
+    // If no user session, create a new user from OAuth data
+    if (!userId) {
+      const { v4: uuidv4 } = await import('uuid');
+      userId = uuidv4();
+      
+      // Create user with locationId as identifier
+      await pool.query(
+        `INSERT INTO users (id, email, name, email_verified, last_login_at)
+         VALUES ($1, $2, $3, true, NOW())
+         ON CONFLICT (email) DO UPDATE SET last_login_at = NOW()
+         RETURNING id`,
+        [userId, `${tokens.locationId}@ghl.local`, `GHL User (${tokens.locationId.substring(0, 8)})`]
+      ).then(result => {
+        if (result.rows[0]) {
+          userId = result.rows[0].id;
+        }
+      });
+
+      // Generate session tokens
+      const { generateJWT, generateRefreshToken } = await import('../lib/user-auth');
+      const user = { id: userId, email: `${tokens.locationId}@ghl.local` };
+      const jwtToken = generateJWT(user);
+      const refreshToken = generateRefreshToken(user);
+
+      // Set session cookies
+      const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax' as const,
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      };
+      res.cookie('token', jwtToken, cookieOptions);
+      res.cookie('refreshToken', refreshToken, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
+
+      logger.info('Created new user via OAuth', { userId, locationId: tokens.locationId });
+    }
+
+    // Store tokens linked to user
     await retryQuery(
       () => pool.query(
         `INSERT INTO oauth_tokens 
