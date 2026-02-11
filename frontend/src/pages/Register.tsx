@@ -12,12 +12,14 @@ import {
   BankOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 const { Title, Text } = Typography;
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const { isDarkMode } = useTheme();
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
 
@@ -216,22 +218,26 @@ const Register: React.FC = () => {
             <Divider />
 
             {/* Features List */}
-            <div style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px' }}>
+            <div style={{ 
+              background: isDarkMode ? '#1f1f1f' : '#f8f9fa', 
+              padding: '16px', 
+              borderRadius: '8px' 
+            }}>
               <Space direction="vertical" style={{ width: '100%' }}>
-                <Text strong style={{ fontSize: '14px' }}>
+                <Text strong style={{ fontSize: '14px', color: isDarkMode ? '#ffffff' : '#1a1a2e' }}>
                   What you'll get:
                 </Text>
                 <div>
                   <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '8px' }} />
-                  <Text style={{ color: '#595959' }}>Free tier: 3 analyses per month</Text>
+                  <Text style={{ color: isDarkMode ? '#d9d9d9' : '#595959' }}>Free tier: 3 analyses per month</Text>
                 </div>
                 <div>
                   <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '8px' }} />
-                  <Text style={{ color: '#595959' }}>Instant workflow scanning</Text>
+                  <Text style={{ color: isDarkMode ? '#d9d9d9' : '#595959' }}>Instant workflow scanning</Text>
                 </div>
                 <div>
                   <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '8px' }} />
-                  <Text style={{ color: '#595959' }}>Risk scoring & recommendations</Text>
+                  <Text style={{ color: isDarkMode ? '#d9d9d9' : '#595959' }}>Risk scoring & recommendations</Text>
                 </div>
               </Space>
             </div>
