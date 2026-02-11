@@ -590,15 +590,20 @@ authRouter.get('/oauth/callback', asyncHandler(async (req: any, res: any) => {
     // If no user session, create a new user from OAuth data
     if (!userId) {
       const { v4: uuidv4 } = await import('uuid');
+      const bcrypt = await import('bcryptjs');
       userId = uuidv4();
+      
+      // Generate a random password hash for OAuth users (they won't use it)
+      const randomPassword = uuidv4() + uuidv4();
+      const passwordHash = await bcrypt.hash(randomPassword, 12);
       
       // Create user with locationId as identifier
       await pool.query(
-        `INSERT INTO users (id, email, name, email_verified, last_login_at)
-         VALUES ($1, $2, $3, true, NOW())
+        `INSERT INTO users (id, email, name, password_hash, email_verified, last_login_at)
+         VALUES ($1, $2, $3, $4, true, NOW())
          ON CONFLICT (email) DO UPDATE SET last_login_at = NOW()
          RETURNING id`,
-        [userId, `${tokens.locationId}@ghl.local`, `GHL User (${tokens.locationId.substring(0, 8)})`]
+        [userId, `${tokens.locationId}@ghl.local`, `GHL User (${tokens.locationId.substring(0, 8)})`, passwordHash]
       ).then(result => {
         if (result.rows[0]) {
           userId = result.rows[0].id;
