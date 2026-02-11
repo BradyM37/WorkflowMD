@@ -38,7 +38,11 @@ apiRouter.use(requireAuth);
  * List all workflows from GHL for authenticated location
  */
 apiRouter.get('/workflows', asyncHandler(async (req, res) => {
-  const locationId = req.locationId!;
+  const locationId = req.locationId;
+  
+  if (!locationId) {
+    return ApiResponse.error(res, 'GHL account not connected. Please connect your GoHighLevel account first.', 400, 'GHL_NOT_CONNECTED');
+  }
   
   logger.info('Fetching workflows', {
     locationId,
