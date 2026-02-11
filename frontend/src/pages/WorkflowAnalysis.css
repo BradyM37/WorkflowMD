@@ -77,6 +77,42 @@
   transform: translateX(4px);
 }
 
+/* Dark mode support */
+body.dark-mode .workflow-analysis-page {
+  background: #1f1f1f;
+}
+
+body.dark-mode .analysis-panel {
+  background: #262626;
+  border-left-color: #303030;
+}
+
+body.dark-mode .panel-header {
+  border-bottom-color: #303030;
+}
+
+body.dark-mode .issue-breakdown-item {
+  background: #1a1a2e;
+  border-left-color: #404040;
+}
+
+body.dark-mode .issue-breakdown-item:hover {
+  background: #2a2a4e;
+  border-left-color: #667eea;
+}
+
+body.dark-mode .issue-breakdown-item .ant-typography {
+  color: #e0e0e0 !important;
+}
+
+body.dark-mode .progress-entry {
+  border-bottom-color: #303030 !important;
+}
+
+body.dark-mode .progress-entry:hover {
+  background: #262626 !important;
+}
+
 /* Progress Timeline */
 .progress-timeline {
   margin-top: 8px;

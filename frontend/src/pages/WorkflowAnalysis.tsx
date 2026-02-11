@@ -4,6 +4,7 @@ import { WarningOutlined, CheckCircleOutlined, ThunderboltOutlined, BugOutlined 
 import WorkflowGraph from '../components/WorkflowGraph';
 import { Node, Edge } from 'reactflow';
 import { MOCK_WORKFLOW_GRAPH_ANALYSIS } from '../mocks/mockData';
+import { useTheme } from '../contexts/ThemeContext';
 import './WorkflowAnalysis.css';
 
 const { Title, Text, Paragraph } = Typography;
@@ -12,11 +13,26 @@ const { Title, Text, Paragraph } = Typography;
 const mockAnalysisResults = MOCK_WORKFLOW_GRAPH_ANALYSIS;
 
 const WorkflowAnalysis: React.FC = () => {
+  const { isDarkMode } = useTheme();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedElement, setSelectedElement] = useState<{
     type: 'node' | 'edge';
     data: Node | Edge;
   } | null>(null);
+
+  // Theme-aware colors
+  const colors = {
+    cardBg: isDarkMode ? '#1a1a2e' : '#f9fafb',
+    titleText: isDarkMode ? '#ffffff' : '#1a1a2e',
+    bodyText: isDarkMode ? '#d9d9d9' : '#595959',
+    mutedText: isDarkMode ? '#8c8c8c' : '#6b7280',
+    progressCurrentBg: isDarkMode ? 'rgba(16, 185, 129, 0.15)' : '#f0fdf4',
+    progressCurrentText: isDarkMode ? '#10b981' : '#166534',
+    tipBg: isDarkMode ? '#1a2e1a' : '#f9fafb',
+    tipText: isDarkMode ? '#d9d9d9' : '#595959',
+    blueTipBg: isDarkMode ? '#1a1a3e' : '#eff6ff',
+    blueTipText: isDarkMode ? '#60a5fa' : '#1e40af',
+  };
 
   const handleNodeClick = (node: Node) => {
     setSelectedElement({ type: 'node', data: node });
@@ -103,36 +119,36 @@ const WorkflowAnalysis: React.FC = () => {
           <Card title="Issue Breakdown" style={{ marginTop: 16 }}>
             <Space direction="vertical" size="small" style={{ width: '100%' }}>
               <div style={{ marginBottom: 12 }}>
-                <Text strong style={{ fontSize: 16 }}>Total Deductions: -{calculateTotalDeductions()} points</Text>
+                <Text strong style={{ fontSize: 16, color: colors.titleText }}>Total Deductions: -{calculateTotalDeductions()} points</Text>
               </div>
               {mockAnalysisResults.loops.map((loop) => (
-                <div key={loop.id} className="issue-breakdown-item">
+                <div key={loop.id} className="issue-breakdown-item" style={{ background: colors.cardBg }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ flex: 1 }}>
                       <WarningOutlined style={{ color: '#ef4444', marginRight: 8 }} />
-                      <Text >{loop.description}</Text>
+                      <Text style={{ color: colors.bodyText }}>{loop.description}</Text>
                     </div>
                     <Tag color="red" style={{ fontWeight: 600 }}>-{loop.pointsDeducted} pts</Tag>
                   </div>
                 </div>
               ))}
               {mockAnalysisResults.conflicts.map((conflict) => (
-                <div key={conflict.id} className="issue-breakdown-item">
+                <div key={conflict.id} className="issue-breakdown-item" style={{ background: colors.cardBg }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ flex: 1 }}>
                       <ThunderboltOutlined style={{ color: '#f59e0b', marginRight: 8 }} />
-                      <Text >{conflict.description}</Text>
+                      <Text style={{ color: colors.bodyText }}>{conflict.description}</Text>
                     </div>
                     <Tag color="orange" style={{ fontWeight: 600 }}>-{conflict.pointsDeducted} pts</Tag>
                   </div>
                 </div>
               ))}
               {mockAnalysisResults.performance.issues.map((issue) => (
-                <div key={issue.id} className="issue-breakdown-item">
+                <div key={issue.id} className="issue-breakdown-item" style={{ background: colors.cardBg }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ flex: 1 }}>
                       <BugOutlined style={{ color: '#ef4444', marginRight: 8 }} />
-                      <Text >{issue.description}</Text>
+                      <Text style={{ color: colors.bodyText }}>{issue.description}</Text>
                     </div>
                     <Tag color={issue.severity === 'high' ? 'red' : 'orange'} style={{ fontWeight: 600 }}>
                       -{issue.pointsDeducted} pts
@@ -159,21 +175,23 @@ const WorkflowAnalysis: React.FC = () => {
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         padding: '12px 0',
-                        borderBottom: isLatest ? 'none' : '1px solid #e5e7eb',
-                        background: isLatest ? '#f0fdf4' : 'transparent',
+                        borderBottom: isLatest ? 'none' : `1px solid ${isDarkMode ? '#303030' : '#e5e7eb'}`,
+                        background: isLatest ? colors.progressCurrentBg : 'transparent',
                         paddingLeft: isLatest ? '12px' : '0',
                         paddingRight: isLatest ? '12px' : '0',
                         borderRadius: isLatest ? '6px' : '0',
                       }}>
                         <div>
-                          <Text strong >{new Date(entry.date).toLocaleDateString()}</Text>
+                          <Text strong style={{ color: isLatest ? colors.progressCurrentText : colors.titleText }}>
+                            {new Date(entry.date).toLocaleDateString()}
+                          </Text>
                           {isLatest && <Tag color="green" style={{ marginLeft: 8 }}>Current</Tag>}
                           <div>
-                            <Text type="secondary" style={{ fontSize: 12, color: '#8c8c8c' }}>{entry.issues} issues</Text>
+                            <Text style={{ fontSize: 12, color: colors.mutedText }}>{entry.issues} issues</Text>
                           </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <Text strong style={{ fontSize: 18 }}>{entry.score}</Text>
+                          <Text strong style={{ fontSize: 18, color: colors.titleText }}>{entry.score}</Text>
                           {improvement !== 0 && (
                             <div>
                               <Text style={{ 
@@ -198,19 +216,19 @@ const WorkflowAnalysis: React.FC = () => {
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
               <div className="summary-item">
                 <WarningOutlined style={{ color: '#ef4444', fontSize: 18 }} />
-                <Text strong >{mockAnalysisResults.loops.length} Loop(s) Detected</Text>
+                <Text strong style={{ color: colors.titleText }}>{mockAnalysisResults.loops.length} Loop(s) Detected</Text>
               </div>
               <div className="summary-item">
                 <ThunderboltOutlined style={{ color: '#f59e0b', fontSize: 18 }} />
-                <Text strong >{mockAnalysisResults.conflicts.length} Trigger Conflict(s)</Text>
+                <Text strong style={{ color: colors.titleText }}>{mockAnalysisResults.conflicts.length} Trigger Conflict(s)</Text>
               </div>
               <div className="summary-item">
                 <BugOutlined style={{ color: '#ef4444', fontSize: 18 }} />
-                <Text strong >{mockAnalysisResults.performance.issues.length} Performance Issue(s)</Text>
+                <Text strong style={{ color: colors.titleText }}>{mockAnalysisResults.performance.issues.length} Performance Issue(s)</Text>
               </div>
               <div className="summary-item">
                 <CheckCircleOutlined style={{ color: '#10b981', fontSize: 18 }} />
-                <Text strong >{mockAnalysisResults.suggestions.length} Optimization Suggestion(s)</Text>
+                <Text strong style={{ color: colors.titleText }}>{mockAnalysisResults.suggestions.length} Optimization Suggestion(s)</Text>
               </div>
             </Space>
           </Card>
@@ -226,7 +244,7 @@ const WorkflowAnalysis: React.FC = () => {
             <Card key={loop.id} style={{ marginBottom: 16 }}>
               <Space direction="vertical" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text strong >{loop.description}</Text>
+                  <Text strong style={{ color: colors.titleText }}>{loop.description}</Text>
                   <Space>
                     <Tag color="red" style={{ fontWeight: 600 }}>-{loop.pointsDeducted} pts</Tag>
                     {renderSeverityTag(loop.severity)}
@@ -234,16 +252,16 @@ const WorkflowAnalysis: React.FC = () => {
                 </div>
                 <Divider style={{ margin: '12px 0' }} />
                 <div>
-                  <Text strong style={{ fontSize: 12, color: '#6b7280' }}>💡 HOW TO FIX</Text>
-                  <Paragraph type="secondary" style={{ marginTop: 8, color: '#8c8c8c' }}>{loop.suggestion}</Paragraph>
+                  <Text strong style={{ fontSize: 12, color: colors.mutedText }}>💡 HOW TO FIX</Text>
+                  <Paragraph style={{ marginTop: 8, color: colors.mutedText }}>{loop.suggestion}</Paragraph>
                 </div>
-                <div style={{ background: '#f9fafb', padding: '8px 12px', borderRadius: '6px', marginTop: 8 }}>
-                  <Text strong style={{ fontSize: 12 }}>Quick Tip: </Text>
-                  <Text style={{ fontSize: 12, color: '#595959' }}>
+                <div style={{ background: colors.tipBg, padding: '8px 12px', borderRadius: '6px', marginTop: 8 }}>
+                  <Text strong style={{ fontSize: 12, color: colors.titleText }}>Quick Tip: </Text>
+                  <Text style={{ fontSize: 12, color: colors.tipText }}>
                     Add an "If/Else" condition with a contact field counter to break loops after N iterations
                   </Text>
                 </div>
-                <Text type="secondary" style={{ fontSize: 12, color: '#8c8c8c' }}>Affected nodes: {loop.nodes.join(' → ')}</Text>
+                <Text style={{ fontSize: 12, color: colors.mutedText }}>Affected nodes: {loop.nodes.join(' → ')}</Text>
               </Space>
             </Card>
           ))}
@@ -259,7 +277,7 @@ const WorkflowAnalysis: React.FC = () => {
             <Card key={conflict.id} style={{ marginBottom: 16 }}>
               <Space direction="vertical" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text strong >{conflict.description}</Text>
+                  <Text strong style={{ color: colors.titleText }}>{conflict.description}</Text>
                   <Space>
                     <Tag color="orange" style={{ fontWeight: 600 }}>-{conflict.pointsDeducted} pts</Tag>
                     {renderSeverityTag(conflict.severity)}
@@ -267,16 +285,16 @@ const WorkflowAnalysis: React.FC = () => {
                 </div>
                 <Divider style={{ margin: '12px 0' }} />
                 <div>
-                  <Text strong style={{ fontSize: 12, color: '#6b7280' }}>💡 HOW TO FIX</Text>
-                  <Paragraph type="secondary" style={{ marginTop: 8, color: '#8c8c8c' }}>{conflict.suggestion}</Paragraph>
+                  <Text strong style={{ fontSize: 12, color: colors.mutedText }}>💡 HOW TO FIX</Text>
+                  <Paragraph style={{ marginTop: 8, color: colors.mutedText }}>{conflict.suggestion}</Paragraph>
                 </div>
-                <div style={{ background: '#f9fafb', padding: '8px 12px', borderRadius: '6px', marginTop: 8 }}>
-                  <Text strong style={{ fontSize: 12 }}>Quick Tip: </Text>
-                  <Text style={{ fontSize: 12, color: '#595959' }}>
+                <div style={{ background: colors.tipBg, padding: '8px 12px', borderRadius: '6px', marginTop: 8 }}>
+                  <Text strong style={{ fontSize: 12, color: colors.titleText }}>Quick Tip: </Text>
+                  <Text style={{ fontSize: 12, color: colors.tipText }}>
                     Use GHL's "Trigger Filter" settings to add conditions that prevent simultaneous execution
                   </Text>
                 </div>
-                <Text type="secondary" style={{ fontSize: 12, color: '#8c8c8c' }}>Triggers: {conflict.triggers.join(', ')}</Text>
+                <Text style={{ fontSize: 12, color: colors.mutedText }}>Triggers: {conflict.triggers.join(', ')}</Text>
               </Space>
             </Card>
           ))}
@@ -300,7 +318,7 @@ const WorkflowAnalysis: React.FC = () => {
               <Card key={issue.id} style={{ marginBottom: 16 }}>
                 <Space direction="vertical" style={{ width: '100%' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text strong >{issue.description}</Text>
+                    <Text strong style={{ color: colors.titleText }}>{issue.description}</Text>
                     <Space>
                       <Tag color={issue.severity === 'high' ? 'red' : 'orange'} style={{ fontWeight: 600 }}>
                         -{issue.pointsDeducted} pts
@@ -310,12 +328,12 @@ const WorkflowAnalysis: React.FC = () => {
                   </div>
                   <Divider style={{ margin: '12px 0' }} />
                   <div>
-                    <Text strong style={{ fontSize: 12, color: '#6b7280' }}>💡 HOW TO FIX</Text>
-                    <Paragraph type="secondary" style={{ marginTop: 8, color: '#8c8c8c' }}>{issue.suggestion}</Paragraph>
+                    <Text strong style={{ fontSize: 12, color: colors.mutedText }}>💡 HOW TO FIX</Text>
+                    <Paragraph style={{ marginTop: 8, color: colors.mutedText }}>{issue.suggestion}</Paragraph>
                   </div>
-                  <div style={{ background: '#f9fafb', padding: '8px 12px', borderRadius: '6px', marginTop: 8 }}>
-                    <Text strong style={{ fontSize: 12 }}>Quick Tip: </Text>
-                    <Text style={{ fontSize: 12, color: '#595959' }}>
+                  <div style={{ background: colors.tipBg, padding: '8px 12px', borderRadius: '6px', marginTop: 8 }}>
+                    <Text strong style={{ fontSize: 12, color: colors.titleText }}>Quick Tip: </Text>
+                    <Text style={{ fontSize: 12, color: colors.tipText }}>
                       {quickTips[issue.type] || 'Optimize this action for better performance'}
                     </Text>
                   </div>
@@ -338,11 +356,11 @@ const WorkflowAnalysis: React.FC = () => {
           {mockAnalysisResults.suggestions.map((suggestion) => (
             <Card key={suggestion.id} style={{ marginBottom: 16 }}>
               <Space direction="vertical" style={{ width: '100%' }}>
-                <Text strong >{suggestion.title}</Text>
-                <Paragraph type="secondary" style={{ color: '#8c8c8c' }}>{suggestion.description}</Paragraph>
-                <div style={{ background: '#eff6ff', padding: '8px 12px', borderRadius: '6px', marginTop: 8 }}>
-                  <Text strong style={{ fontSize: 12, color: '#1e40af' }}>💡 Quick Tip: </Text>
-                  <Text style={{ fontSize: 12, color: '#1e40af' }}>
+                <Text strong style={{ color: colors.titleText }}>{suggestion.title}</Text>
+                <Paragraph style={{ color: colors.mutedText }}>{suggestion.description}</Paragraph>
+                <div style={{ background: colors.blueTipBg, padding: '8px 12px', borderRadius: '6px', marginTop: 8 }}>
+                  <Text strong style={{ fontSize: 12, color: colors.blueTipText }}>💡 Quick Tip: </Text>
+                  <Text style={{ fontSize: 12, color: colors.blueTipText }}>
                     {suggestion.quickTip}
                   </Text>
                 </div>
@@ -368,7 +386,7 @@ const WorkflowAnalysis: React.FC = () => {
 
         <div className="analysis-panel">
           <div className="panel-header">
-            <Title level={3} >Analysis Results</Title>
+            <Title level={3} style={{ color: colors.titleText, margin: 0 }}>Analysis Results</Title>
             <Button type="primary">Run New Analysis</Button>
           </div>
           <Tabs items={analysisItems} />
