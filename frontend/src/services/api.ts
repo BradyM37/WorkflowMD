@@ -8,7 +8,7 @@ const getBaseURL = () => {
   }
   // In production (no env var), use the production backend
   if (window.location.hostname !== 'localhost') {
-    return 'https://ghlworkflowdebugger.onrender.com';
+    return 'https://workflowmd.onrender.com';
   }
   // Local development fallback
   return 'http://localhost:3000';
