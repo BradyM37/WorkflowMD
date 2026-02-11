@@ -82,6 +82,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const response = await api.post('/auth/login', { email, password, rememberMe });
     
     if (response.data.success) {
+      // Store token in localStorage for cross-domain auth
+      if (response.data.data.token) {
+        localStorage.setItem('auth_token', response.data.data.token);
+      }
+      
       setUser(response.data.data.user);
       setIsAuthenticated(true);
       setSubscription(response.data.data.subscription || 'free');
@@ -99,8 +104,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(response.data.error?.message || 'Registration failed');
     }
     
-    // After registration, user needs to verify email or login
-    // Optionally auto-login after registration:
+    // After registration, store token and set user
+    if (response.data.data.token) {
+      localStorage.setItem('auth_token', response.data.data.token);
+    }
+    
     if (response.data.data.user) {
       setUser(response.data.data.user);
       setIsAuthenticated(true);
@@ -114,6 +122,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      // Clear stored token
+      localStorage.removeItem('auth_token');
+      
       setUser(null);
       setIsAuthenticated(false);
       setSubscription('free');
