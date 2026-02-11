@@ -100,22 +100,19 @@ export async function fetchWorkflows(locationId: string): Promise<any[]> {
 
 export async function fetchWorkflow(workflowId: string, locationId: string): Promise<any> {
   try {
-    const token = await getValidToken(locationId);
+    // GHL doesn't have a single-workflow endpoint - fetch list and filter
+    const workflows = await fetchWorkflows(locationId);
+    const workflow = workflows.find((w: any) => w.id === workflowId);
     
-    const response = await axios.get(`${GHL_API_BASE}/workflows/${workflowId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Version': '2021-07-28',
-        'Accept': 'application/json'
-      },
-      params: {
-        locationId: locationId
-      }
-    });
-
-    return response.data;
+    if (!workflow) {
+      console.error('Workflow not found in list:', { workflowId, locationId, availableIds: workflows.map((w: any) => w.id) });
+      throw new Error(`Workflow ${workflowId} not found`);
+    }
+    
+    console.log('Found workflow from list:', { workflowId, name: workflow.name });
+    return workflow;
   } catch (error: any) {
-    console.error('Fetch workflow error:', error.response?.data || error.message);
+    console.error('Fetch workflow error:', error.message);
     
     // Return mock data for development
     if (process.env.NODE_ENV === 'development') {
