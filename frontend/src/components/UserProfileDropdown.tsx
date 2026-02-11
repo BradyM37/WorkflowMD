@@ -17,7 +17,7 @@ const { Text } = Typography;
 
 const UserProfileDropdown: React.FC = () => {
   const navigate = useNavigate();
-  const { user, logout, locationId, subscription } = useAuth();
+  const { user, logout, locationId, subscription, ghlConnected } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -26,8 +26,6 @@ const UserProfileDropdown: React.FC = () => {
     localStorage.removeItem('ghl_connected');
     navigate('/login');
   };
-
-  const ghlConnected = localStorage.getItem('ghl_connected');
 
   const items: MenuProps['items'] = [
     {

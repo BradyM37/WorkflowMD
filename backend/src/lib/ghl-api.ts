@@ -106,7 +106,10 @@ export async function fetchWorkflow(workflowId: string, locationId: string): Pro
       headers: {
         'Authorization': `Bearer ${token}`,
         'Version': '2021-07-28',
-        'Content-Type': 'application/json'
+        'Accept': 'application/json'
+      },
+      params: {
+        locationId: locationId
       }
     });
 

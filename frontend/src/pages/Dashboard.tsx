@@ -121,8 +121,9 @@ const Dashboard: React.FC = () => {
     const authToken = searchParams.get('auth_token');
     
     if (ghlConnected === 'true' && authToken) {
-      // Store the auth token
+      // Store the auth token and connection status
       localStorage.setItem('auth_token', authToken);
+      localStorage.setItem('ghl_connected', 'true');
       
       // Re-check auth with new token
       checkAuth();
