@@ -49,6 +49,7 @@ import testConvRouter from './routes/test-conversations';
 import responseSettingsRouter from './routes/response-settings';
 import advancedMetricsRouter from './routes/metrics-advanced';
 import reportsRouter from './routes/reports';
+import healthRouter from './routes/health';
 import brandingRouter from './routes/branding';
 import shareRouter from './routes/share';
 import { benchmarksRouter } from './routes/benchmarks';
@@ -357,6 +358,7 @@ app.use('/api/reports', tieredRateLimiter, reportsRouter);
 app.use('/api/branding', tieredRateLimiter, brandingRouter);
 app.use('/api/reports', shareRouter); // Public share routes (no auth required)
 app.use('/api/benchmarks', tieredRateLimiter, benchmarksRouter);
+app.use('/api/health', healthRouter); // Detailed health checks for monitoring
 app.use('/api/test-conv', testConvRouter); // TEMP: Remove after verifying API works
 app.use('/api', tieredRateLimiter, monitoringRouter);
 

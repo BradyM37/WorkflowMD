@@ -297,6 +297,9 @@ function AppContent() {
               />
               <Route path="/pricing" element={<Pricing />} />
               
+              {/* Public Shared Report View (no auth required) */}
+              <Route path="/reports/share/:token" element={<SharedReportView />} />
+              
               {/* Protected Routes - Require Login */}
               <Route
                 path="/connect-ghl"
@@ -351,6 +354,14 @@ function AppContent() {
                 element={
                   <PrivateRoute>
                     <Settings />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/branding"
+                element={
+                  <PrivateRoute>
+                    <BrandingSettings />
                   </PrivateRoute>
                 }
               />

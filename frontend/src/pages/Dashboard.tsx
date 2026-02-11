@@ -4,12 +4,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Card, List, Button, Typography, Space, Tag, Row, Col,
   Statistic, Badge, Avatar, Input, Select, Empty,
-  Tabs
+  Tabs, Modal
 } from 'antd';
 import {
-  ThunderboltOutlined, 
-  HistoryOutlined, 
-  CrownOutlined, 
+  ThunderboltOutlined,
+  HistoryOutlined,
+  CrownOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   RocketOutlined,
@@ -266,19 +266,22 @@ const Dashboard: React.FC = () => {
       }}>
         <Row gutter={[24, 24]} align="middle">
           <Col xs={24} lg={16}>
-            <Title level={2} style={{ color: 'white', margin: 0 }}>
-              <DashboardOutlined /> Workflow Analysis Dashboard
-            </Title>
+            <Space align="center" style={{ marginBottom: '8px' }}>
+              <Title level={2} style={{ color: 'white', margin: 0 }}>
+                <DashboardOutlined /> Workflow Analysis Dashboard
+              </Title>
+              <BenchmarkBadge size="small" onClick={() => setBenchmarkModalVisible(true)} />
+            </Space>
             <Paragraph style={{ color: 'rgba(255,255,255,0.9)', fontSize: '16px', marginTop: '8px' }}>
               Analyze your GoHighLevel workflows to find configuration errors, performance issues, and optimization opportunities.
             </Paragraph>
             <Space style={{ marginTop: '16px' }}>
-              <Button
+              <Button 
                 type="default"
-                icon={<LineChartOutlined />}
+                icon={<LineChartOutlined />} 
                 size="large"
                 onClick={() => navigate('/workflow-graph')}
-                style={{
+                style={{ 
                   background: 'white',
                   borderColor: 'white',
                   fontWeight: 'bold',
@@ -287,6 +290,18 @@ const Dashboard: React.FC = () => {
                 }}
               >
                 View Workflow Graph
+              </Button>
+              <Button 
+                icon={<BarChartOutlined />} 
+                size="large"
+                onClick={() => setBenchmarkModalVisible(true)}
+                style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  borderColor: 'rgba(255,255,255,0.5)',
+                  color: 'white'
+                }}
+              >
+                Industry Benchmark
               </Button>
               {subscription === 'free' && (
                 <Button
@@ -637,6 +652,21 @@ const Dashboard: React.FC = () => {
         onClose={() => setScheduleModalVisible(false)}
         workflows={workflows || []}
       />
+
+      {/* Benchmark Modal */}
+      <Modal
+        open={benchmarkModalVisible}
+        onCancel={() => setBenchmarkModalVisible(false)}
+        footer={null}
+        width={800}
+        destroyOnClose
+        style={{ top: 20 }}
+      >
+        <BenchmarkCard
+          expanded={true}
+          onClose={() => setBenchmarkModalVisible(false)}
+        />
+      </Modal>
     </div>
   );
 };
