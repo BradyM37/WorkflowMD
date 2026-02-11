@@ -47,7 +47,8 @@ import {
   ReloadOutlined,
   InfoCircleOutlined,
   LinkOutlined,
-  SettingOutlined
+  SettingOutlined,
+  DownloadOutlined
 } from '@ant-design/icons';
 import { 
   LineChart, 
@@ -71,6 +72,8 @@ import api from '../services/api';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import ResponseHeatmap from '../components/ResponseHeatmap';
+import PeriodComparison from '../components/PeriodComparison';
 import './ResponseDashboard.css';
 
 const { Title, Text, Paragraph } = Typography;
@@ -656,6 +659,14 @@ const ResponseDashboard: React.FC = () => {
               {isSyncing ? 'Syncing...' : 'Sync'}
             </Button>
           </Tooltip>
+          <Tooltip title="Export CSV">
+            <Button 
+              icon={<DownloadOutlined />}
+              onClick={() => {
+                window.open(`${api.defaults.baseURL}/api/metrics/export?days=${selectedDays}`, '_blank');
+              }}
+            />
+          </Tooltip>
           <Tooltip title="Alert Settings">
             <Button 
               icon={<SettingOutlined />}
@@ -880,6 +891,16 @@ const ResponseDashboard: React.FC = () => {
               </ResponsiveContainer>
             )}
           </Card>
+        </Col>
+      </Row>
+
+      {/* Comparison & Heatmap Row */}
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col xs={24} lg={12}>
+          <PeriodComparison days={selectedDays} />
+        </Col>
+        <Col xs={24} lg={12}>
+          <ResponseHeatmap days={30} />
         </Col>
       </Row>
 

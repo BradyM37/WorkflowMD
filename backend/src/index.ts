@@ -47,6 +47,7 @@ import ghlSsoRouter from './routes/ghl-sso';
 import metricsRouter from './routes/metrics';
 import testConvRouter from './routes/test-conversations';
 import responseSettingsRouter from './routes/response-settings';
+import advancedMetricsRouter from './routes/metrics-advanced';
 
 // Load environment variables
 dotenv.config();
@@ -346,6 +347,7 @@ app.use('/', ghlSsoRouter);
 app.use('/api', tieredRateLimiter, apiRouter);
 app.use('/api/subscription', tieredRateLimiter, subscriptionRouter);
 app.use('/api/metrics', tieredRateLimiter, metricsRouter);
+app.use('/api/metrics', tieredRateLimiter, advancedMetricsRouter);
 app.use('/api/settings/response', tieredRateLimiter, responseSettingsRouter);
 app.use('/api/test-conv', testConvRouter); // TEMP: Remove after verifying API works
 app.use('/api', tieredRateLimiter, monitoringRouter);
