@@ -109,7 +109,16 @@ export async function fetchWorkflow(workflowId: string, locationId: string): Pro
       throw new Error(`Workflow ${workflowId} not found`);
     }
     
-    console.log('Found workflow from list:', { workflowId, name: workflow.name });
+    // Log FULL workflow structure to see what GHL actually returns
+    console.log('=== GHL WORKFLOW DATA ===');
+    console.log('Workflow ID:', workflowId);
+    console.log('Full workflow object:', JSON.stringify(workflow, null, 2));
+    console.log('Has nodes?', !!workflow.nodes, 'Count:', workflow.nodes?.length);
+    console.log('Has actions?', !!workflow.actions, 'Count:', workflow.actions?.length);
+    console.log('Has triggers?', !!workflow.triggers, 'Count:', workflow.triggers?.length);
+    console.log('All keys:', Object.keys(workflow));
+    console.log('=========================');
+    
     return workflow;
   } catch (error: any) {
     console.error('Fetch workflow error:', error.message);
