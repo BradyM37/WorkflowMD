@@ -667,9 +667,9 @@ authRouter.get('/oauth/callback', asyncHandler(async (req: any, res: any) => {
 
     // Get or generate JWT for the redirect
     let jwtToken: string;
-    const authToken = req.cookies.auth_token || req.cookies.token;
-    if (authToken) {
-      jwtToken = authToken;
+    const existingToken = req.cookies.auth_token || req.cookies.token;
+    if (existingToken) {
+      jwtToken = existingToken;
     } else {
       // Generate new token for this user
       const { generateJWT } = await import('../lib/user-auth');
