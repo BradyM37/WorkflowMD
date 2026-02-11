@@ -22,6 +22,7 @@ interface AuthContextType {
   isLoading: boolean;
   subscription: 'free' | 'pro';
   locationId: string | null;
+  ghlConnected: boolean;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
@@ -46,142 +47,94 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [subscription, setSubscription] = useState<'free' | 'pro'>('free');
   const [locationId, setLocationId] = useState<string | null>(null);
+  const [ghlConnected, setGhlConnected] = useState(false);
 
   const checkAuth = async () => {
     setIsLoading(true);
     
-    // Check for demo mode first
-    const demoMode = localStorage.getItem('demo_mode');
-    if (demoMode === 'true') {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
-        setIsAuthenticated(true);
-        setSubscription('pro');
-        // Use stored email as location ID, fallback to user email
-        setLocationId(localStorage.getItem('location_id') || userData.email || 'demo_location');
-        setIsLoading(false);
-        return;
-      }
-    }
-    
     try {
       const response = await api.get('/auth/status');
-      setUser(response.data.user);
-      setIsAuthenticated(response.data.authenticated);
-      setSubscription(response.data.subscription || 'free');
-      setLocationId(response.data.locationId);
+      if (response.data.success && response.data.data.authenticated) {
+        setUser(response.data.data.user);
+        setIsAuthenticated(true);
+        setSubscription(response.data.data.subscription || 'free');
+        setLocationId(response.data.data.locationId || null);
+        setGhlConnected(response.data.data.ghlConnected || false);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+        setSubscription('free');
+        setLocationId(null);
+        setGhlConnected(false);
+      }
     } catch (error) {
       setUser(null);
       setIsAuthenticated(false);
       setSubscription('free');
       setLocationId(null);
+      setGhlConnected(false);
     } finally {
       setIsLoading(false);
     }
   };
 
   const login = async (email: string, password: string, rememberMe: boolean = false) => {
-    try {
-      // Mock API call for demo
-      const mockUser: User = {
-        id: '1',
-        email,
-        name: email.split('@')[0],
-        emailVerified: true
-      };
-
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      localStorage.setItem('auth_token', 'mock_jwt_token');
-      localStorage.setItem('demo_mode', 'true');
-      localStorage.setItem('location_id', email); // Use email as location ID
-      
-      if (rememberMe) {
-        localStorage.setItem('remember_me', 'true');
-      }
-
-      setUser(mockUser);
+    const response = await api.post('/auth/login', { email, password, rememberMe });
+    
+    if (response.data.success) {
+      setUser(response.data.data.user);
       setIsAuthenticated(true);
-      setLocationId(email); // Set email as location ID
-      setSubscription('pro'); // Demo users get pro
-      
-      // In production, this would be:
-      // const response = await api.post('/auth/login', { email, password, rememberMe });
-      // setUser(response.data.user);
-      // setIsAuthenticated(true);
-    } catch (error) {
-      console.error('Login error:', error);
-      throw new Error('Invalid email or password');
+      setSubscription(response.data.data.subscription || 'free');
+      setLocationId(response.data.data.locationId || null);
+      setGhlConnected(response.data.data.ghlConnected || false);
+    } else {
+      throw new Error(response.data.error?.message || 'Login failed');
     }
   };
 
   const register = async (data: RegisterData) => {
-    try {
-      // Mock API call for demo
-      const newUser: User = {
-        id: Date.now().toString(),
-        email: data.email,
-        name: data.name,
-        companyName: data.companyName,
-        emailVerified: false
-      };
-
-      localStorage.setItem('pending_user', JSON.stringify(newUser));
-      
-      // In production, this would be:
-      // const response = await api.post('/auth/register', data);
-      // localStorage.setItem('pending_user', JSON.stringify(response.data.user));
-    } catch (error) {
-      console.error('Registration error:', error);
-      throw new Error('Registration failed. Please try again.');
+    const response = await api.post('/auth/register', data);
+    
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Registration failed');
+    }
+    
+    // After registration, user needs to verify email or login
+    // Optionally auto-login after registration:
+    if (response.data.data.user) {
+      setUser(response.data.data.user);
+      setIsAuthenticated(true);
+      setSubscription('free');
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
       setUser(null);
       setIsAuthenticated(false);
       setSubscription('free');
       setLocationId(null);
-      
-      localStorage.removeItem('user');
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('demo_mode');
-      localStorage.removeItem('location_id');
-      localStorage.removeItem('remember_me');
-      
-      // In production:
-      // await api.post('/auth/logout');
-    } catch (error) {
-      console.error('Logout error:', error);
+      setGhlConnected(false);
     }
   };
 
   const forgotPassword = async (email: string) => {
-    try {
-      // Mock API call
-      console.log('Password reset email sent to:', email);
-      localStorage.setItem('reset_email', email);
-      
-      // In production:
-      // await api.post('/auth/forgot-password', { email });
-    } catch (error) {
-      console.error('Forgot password error:', error);
-      throw new Error('Failed to send reset email. Please try again.');
+    const response = await api.post('/auth/forgot-password', { email });
+    
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Failed to send reset email');
     }
   };
 
   const resetPassword = async (token: string, password: string) => {
-    try {
-      // Mock API call
-      console.log('Password reset for token:', token);
-      
-      // In production:
-      // await api.post('/auth/reset-password', { token, password });
-    } catch (error) {
-      console.error('Reset password error:', error);
-      throw new Error('Failed to reset password. Token may be invalid or expired.');
+    const response = await api.post('/auth/reset-password', { token, password });
+    
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Failed to reset password');
     }
   };
 
@@ -197,6 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         subscription,
         locationId,
+        ghlConnected,
         login,
         register,
         logout,

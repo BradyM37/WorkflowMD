@@ -126,17 +126,14 @@ const Dashboard: React.FC = () => {
   // Get current schedule from localStorage
   const currentSchedule = JSON.parse(localStorage.getItem('scan_schedule') || 'null');
 
-  // Fetch workflows (use mock data for demo)
+  // Fetch workflows from API
   const { 
     data: workflows, 
     isLoading: loadingWorkflows
   } = useQuery<Workflow[]>(
     'workflows',
     () => {
-      if (localStorage.getItem('demo_mode') === 'true') {
-        return Promise.resolve(MOCK_WORKFLOWS);
-      }
-      return api.get('/api/workflows').then(res => res.data);
+      return api.get('/api/workflows').then(res => res.data.data || res.data);
     },
     {
       retry: 1,
@@ -159,45 +156,44 @@ const Dashboard: React.FC = () => {
   // Get categories from workflows
   const categories = Array.from(new Set(workflows?.map(w => w.category).filter(Boolean)));
 
-  const handleAnalyze = (workflow: Workflow) => {
+  const handleAnalyze = async (workflow: Workflow) => {
     console.log('Analyzing workflow:', workflow.id);
     setAnalyzing(workflow.id);
     toast.info('Analyzing workflow...');
     
-    // Demo mode - create and save analysis
-    if (localStorage.getItem('demo_mode') === 'true') {
-      // Use centralized mock data
-      const mockAnalysisResult = createMockAnalysisForWorkflow(workflow, subscription as 'free' | 'pro');
+    try {
+      // Call real analysis API
+      const response = await api.post('/api/analyze', { workflowId: workflow.id });
+      const analysisResult = response.data.data || response.data;
       
-      // Convert to AnalysisHistory format for localStorage
-      const mockAnalysis: AnalysisHistory = {
-        id: mockAnalysisResult.id!,
-        workflow_id: mockAnalysisResult.workflowId,
-        workflow_name: mockAnalysisResult.workflowName,
-        health_score: mockAnalysisResult.healthScore,
-        grade: mockAnalysisResult.grade,
-        issues_found: mockAnalysisResult.issuesFound,
-        created_at: mockAnalysisResult.created_at!,
-        issues: mockAnalysisResult.issues
+      // Convert to AnalysisHistory format
+      const analysis: AnalysisHistory = {
+        id: analysisResult.id,
+        workflow_id: analysisResult.workflowId,
+        workflow_name: analysisResult.workflowName || workflow.name,
+        health_score: analysisResult.healthScore,
+        grade: analysisResult.grade,
+        issues_found: analysisResult.issuesFound,
+        created_at: analysisResult.created_at || new Date().toISOString(),
+        issues: analysisResult.issues
       };
       
       // Save to history
-      const updatedHistory = saveHistory(mockAnalysis);
+      const updatedHistory = saveHistory(analysis);
       setLocalHistory(updatedHistory);
       
-      // Navigate to analysis page after simulated loading
-      setTimeout(() => {
-        setAnalyzing(null);
-        toast.success('Workflow analyzed successfully');
-        
-        navigate(`/analysis/${mockAnalysis.id}`, { 
-          state: { 
-            analysis: mockAnalysisResult
-          }
-        });
-      }, 2000);
+      setAnalyzing(null);
+      toast.success('Workflow analyzed successfully');
       
-      return;
+      navigate(`/analysis/${analysis.id}`, { 
+        state: { 
+          analysis: analysisResult
+        }
+      });
+    } catch (error: any) {
+      console.error('Analysis error:', error);
+      setAnalyzing(null);
+      toast.error(error.response?.data?.error?.message || 'Failed to analyze workflow');
     }
   };
 
