@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#667eea" />
+    <meta name="theme-color" content="#1890ff" />
     <meta
       name="description"
       content="Analyze GoHighLevel workflows for errors and optimization opportunities. Find configuration issues, performance bottlenecks, and get actionable recommendations."
@@ -53,5 +53,15 @@
       </div>
     </noscript>
     <div id="root"></div>
+    <script>
+      // Register service worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((reg) => console.log('SW registered:', reg.scope))
+            .catch((err) => console.log('SW registration failed:', err));
+        });
+      }
+    </script>
   </body>
 </html>

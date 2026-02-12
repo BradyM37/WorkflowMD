@@ -1,6 +1,6 @@
 {
-  "short_name": "GHL Debugger",
   "name": "WorkflowMD",
+  "short_name": "WMD",
   "description": "Find and fix GoHighLevel workflow issues in seconds",
   "icons": [
     {
@@ -23,23 +23,10 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#667eea",
-  "background_color": "#ffffff",
+  "theme_color": "#1890ff",
+  "background_color": "#141414",
   "orientation": "portrait-primary",
   "categories": ["productivity", "business", "developer"],
-  "screenshots": [
-    {
-      "src": "screenshot1.png",
-      "type": "image/png",
-      "sizes": "1280x720",
-      "form_factor": "wide"
-    },
-    {
-      "src": "screenshot2.png",
-      "type": "image/png",
-      "sizes": "750x1334"
-    }
-  ],
   "shortcuts": [
     {
       "name": "Dashboard",

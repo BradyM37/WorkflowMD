@@ -12,6 +12,7 @@ import {
   MenuOutlined,
   QuestionCircleOutlined
 } from '@ant-design/icons';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -298,8 +299,8 @@ function AppContent() {
                 path="/" 
                 element={
                   isAuthenticated 
-                    ? (localStorage.getItem('onboarding_completed') ? <Navigate to="/dashboard" /> : <Navigate to="/onboarding" />)
-                    : <Navigate to="/login" />
+                    ? (localStorage.getItem('onboarding_completed') ? <Navigate to="/response-tracker" /> : <Navigate to="/onboarding" />)
+                    : <Landing />
                 } 
               />
               <Route 

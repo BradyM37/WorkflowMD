@@ -16,6 +16,14 @@ interface RegisterData {
   companyName?: string;
 }
 
+export interface GHLLocation {
+  id: string;
+  name: string;
+  companyName?: string;
+  address?: string;
+  connectedAt?: Date;
+}
+
 export type PlanType = 'free' | 'pro' | 'agency';
 
 interface AuthContextType {
@@ -25,6 +33,8 @@ interface AuthContextType {
   subscription: PlanType;
   planType: PlanType;
   locationId: string | null;
+  currentLocationId: string | null;
+  locations: GHLLocation[];
   ghlConnected: boolean;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
@@ -32,6 +42,8 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, password: string) => Promise<void>;
   checkAuth: () => Promise<void>;
+  switchLocation: (locationId: string) => Promise<void>;
+  refreshLocations: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,10 +62,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [subscription, setSubscription] = useState<PlanType>('free');
   const [locationId, setLocationId] = useState<string | null>(null);
+  const [currentLocationId, setCurrentLocationId] = useState<string | null>(null);
+  const [locations, setLocations] = useState<GHLLocation[]>([]);
   const [ghlConnected, setGhlConnected] = useState(false);
 
   // planType is an alias for subscription for cleaner API
   const planType = subscription;
+
+  const refreshLocations = async () => {
+    try {
+      const response = await api.get('/api/locations');
+      if (response.data.success) {
+        setLocations(response.data.data.locations || []);
+        setCurrentLocationId(response.data.data.currentLocationId || null);
+        setLocationId(response.data.data.currentLocationId || null);
+      }
+    } catch (error) {
+      console.error('Failed to refresh locations:', error);
+    }
+  };
+
+  const switchLocation = async (newLocationId: string) => {
+    try {
+      const response = await api.post('/api/locations/switch', { locationId: newLocationId });
+      if (response.data.success) {
+        setCurrentLocationId(newLocationId);
+        setLocationId(newLocationId);
+        // Trigger a page reload to refresh data for new location
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Failed to switch location:', error);
+      throw error;
+    }
+  };
 
   const checkAuth = async () => {
     setIsLoading(true);
@@ -67,12 +109,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const plan = response.data.data.planType || response.data.data.subscription || 'free';
         setSubscription(plan as PlanType);
         setLocationId(response.data.data.locationId || null);
+        setCurrentLocationId(response.data.data.locationId || null);
         setGhlConnected(response.data.data.ghlConnected || false);
+        
+        // Fetch locations if GHL is connected
+        if (response.data.data.ghlConnected) {
+          await refreshLocations();
+        }
       } else {
         setUser(null);
         setIsAuthenticated(false);
         setSubscription('free');
         setLocationId(null);
+        setCurrentLocationId(null);
+        setLocations([]);
         setGhlConnected(false);
       }
     } catch (error) {
@@ -80,6 +130,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAuthenticated(false);
       setSubscription('free');
       setLocationId(null);
+      setCurrentLocationId(null);
+      setLocations([]);
       setGhlConnected(false);
     } finally {
       setIsLoading(false);
@@ -138,6 +190,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAuthenticated(false);
       setSubscription('free');
       setLocationId(null);
+      setCurrentLocationId(null);
+      setLocations([]);
       setGhlConnected(false);
     }
   };
@@ -171,6 +225,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         subscription,
         planType,
         locationId,
+        currentLocationId,
+        locations,
         ghlConnected,
         login,
         register,
@@ -178,6 +234,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         forgotPassword,
         resetPassword,
         checkAuth,
+        switchLocation,
+        refreshLocations,
       }}
     >
       {children}
