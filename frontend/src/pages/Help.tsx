@@ -94,7 +94,7 @@ const Help: React.FC = () => {
           </Paragraph>
           <ol>
             <li>Go to <Text code>Settings → Integrations</Text></li>
-            <li>Click "Connect Slack" and authorize WorkflowMD</li>
+            <li>Click "Connect Slack" and authorize FirstResponse</li>
             <li>Select the channel for alerts (or create a dedicated #leads channel)</li>
             <li>Configure alert types:
               <ul>
@@ -169,7 +169,7 @@ const Help: React.FC = () => {
             <strong>How we calculate recovered leads:</strong>
           </Paragraph>
           <ul>
-            <li>We track your response time improvement since using WorkflowMD</li>
+            <li>We track your response time improvement since using FirstResponse</li>
             <li>Industry data shows each 10-minute improvement recovers ~15% more leads</li>
             <li>Multiply recovered lead % by your total lead volume</li>
             <li>Apply your average deal value (set in Settings)</li>
@@ -193,7 +193,7 @@ const Help: React.FC = () => {
           <QuestionCircleOutlined style={{ fontSize: 48, color: '#667eea', marginBottom: 16 }} />
           <Title level={2} style={{ marginBottom: 8 }}>Help & Documentation</Title>
           <Paragraph type="secondary" style={{ fontSize: 16 }}>
-            Everything you need to get the most out of WorkflowMD
+            Everything you need to get the most out of FirstResponse
           </Paragraph>
         </div>
 
@@ -275,7 +275,7 @@ const Help: React.FC = () => {
           className={isDarkMode ? 'dark-card' : ''}
         >
           <Paragraph type="secondary">
-            WorkflowMD supports keyboard shortcuts for power users. Press <Text keyboard>?</Text> 
+            FirstResponse supports keyboard shortcuts for power users. Press <Text keyboard>?</Text> 
             {' '}anywhere to see all available shortcuts.
           </Paragraph>
           <Button 
@@ -307,7 +307,7 @@ const Help: React.FC = () => {
             </Paragraph>
             <Button 
               size="large"
-              href="mailto:support@workflowmd.com"
+              href="mailto:support@firstresponse.app"
               style={{ 
                 background: 'white', 
                 color: '#667eea', 

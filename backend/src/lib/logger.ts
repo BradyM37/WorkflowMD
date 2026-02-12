@@ -20,7 +20,7 @@ interface LogContext {
 }
 
 class Logger {
-  private serviceName: string = 'workflowmd';
+  private serviceName: string = 'firstresponse';
   private env: string = process.env.NODE_ENV || 'development';
 
   private formatLog(level: LogLevel, message: string, context?: LogContext, error?: Error): string {

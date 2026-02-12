@@ -1,7 +1,7 @@
 {
-  "name": "WorkflowMD",
-  "short_name": "WMD",
-  "description": "Find and fix GoHighLevel workflow issues in seconds",
+  "name": "FirstResponse",
+  "short_name": "FR",
+  "description": "Win Every Lead. Respond First.",
   "icons": [
     {
       "src": "favicon.ico",

@@ -90,7 +90,7 @@ const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
           <div style={cardStyle}>
             <div style={{ fontSize: '64px', marginBottom: '24px' }}>🚀</div>
             <Title level={2} style={{ marginBottom: '8px' }}>
-              Welcome to WorkflowMD
+              Welcome to FirstResponse
             </Title>
             <Paragraph style={{ fontSize: '18px', color: isDarkMode ? '#a0a0a0' : '#666', marginBottom: '32px' }}>
               The speed-to-lead analytics platform that helps you respond faster and win more leads.

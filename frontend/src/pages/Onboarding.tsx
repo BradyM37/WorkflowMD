@@ -32,7 +32,7 @@ const Onboarding: React.FC = () => {
         alignItems: 'center',
         gap: '8px'
       }}>
-        🔍 WorkflowMD
+        🚀 FirstResponse
       </div>
       
       <Content style={{ 
@@ -52,7 +52,7 @@ const Onboarding: React.FC = () => {
         color: 'rgba(255,255,255,0.6)',
         fontSize: '13px'
       }}>
-        © 2026 WorkflowMD • Speed-to-Lead Analytics
+        FirstResponse ©2026 - Speed-to-Lead Analytics for GHL
       </div>
     </Layout>
   );

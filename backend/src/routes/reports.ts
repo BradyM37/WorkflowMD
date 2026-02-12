@@ -179,7 +179,7 @@ function generateDailyReportHTML(data: DailyReportData, locationName: string, re
 
   <!-- Footer -->
   <div style="padding: 24px; text-align: center; color: #6b7280; font-size: 12px;">
-    <p style="margin: 0;">Sent by <a href="https://workflowmd.com" style="color: #667eea; text-decoration: none;">WorkflowMD</a> Response Tracker</p>
+    <p style="margin: 0;">Sent by <a href="https://firstresponse.app" style="color: #667eea; text-decoration: none;">FirstResponse</a></p>
     <p style="margin: 8px 0 0;">You're receiving this because you enabled daily reports.</p>
   </div>
 

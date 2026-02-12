@@ -74,7 +74,7 @@ function AppHeader() {
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap'
           }}>
-            🔍 WorkflowMD
+            🚀 FirstResponse
           </h1>
         </div>
         
@@ -434,10 +434,10 @@ function AppContent() {
         padding: 'clamp(12px, 3vw, 24px)'
       }}>
         <div style={{ fontSize: 'clamp(12px, 2.5vw, 14px)' }}>
-          WorkflowMD ©2026 - Speed-to-Lead Analytics for GHL
+          FirstResponse ©2026 - Win Every Lead. Respond First.
           <br />
           <span style={{ fontSize: 'clamp(10px, 2vw, 12px)', color: isDarkMode ? '#595959' : '#8c8c8c' }}>
-            Respond Faster • Win More Leads • Track Performance
+            Win Every Lead. Respond First.
           </span>
         </div>
       </Footer>

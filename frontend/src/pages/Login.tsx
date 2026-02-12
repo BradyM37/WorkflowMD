@@ -95,7 +95,7 @@ const Login: React.FC = () => {
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
               }}>
-                WorkflowMD
+                FirstResponse
               </Title>
               
               <Paragraph style={{ fontSize: '20px', color: colors.mutedText, marginBottom: '32px' }}>

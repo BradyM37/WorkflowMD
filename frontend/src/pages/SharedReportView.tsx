@@ -458,7 +458,7 @@ const SharedReportView: React.FC = () => {
           {branding.customFooterText || (
             branding.hidePoweredBy 
               ? `© ${new Date().getFullYear()} ${branding.companyName}`
-              : `Powered by WorkflowMD Response Tracker • ${new Date().getFullYear()}`
+              : `Powered by FirstResponse • ${new Date().getFullYear()}`
           )}
         </div>
       </div>

@@ -363,7 +363,7 @@ export async function generateResponseReportPDF(locationId: string, days: number
         margins: { top: 50, bottom: 60, left: 50, right: 50 },
         info: {
           Title: `Response Time Report - ${data.locationName}`,
-          Author: 'WorkflowMD Response Tracker',
+          Author: 'FirstResponse',
           Subject: 'Response Time Analytics',
           CreationDate: new Date()
         },
@@ -949,7 +949,7 @@ function addFooter(doc: PDFKit.PDFDocument) {
      .fillColor(COLORS.textLight)
      .font('Helvetica')
      .text(
-       `WorkflowMD Response Tracker  •  Page ${pageNum}  •  Generated ${new Date().toLocaleString()}`,
+       `FirstResponse  •  Page ${pageNum}  •  Generated ${new Date().toLocaleString()}`,
        50,
        doc.page.height - 40,
        { width: doc.page.width - 100, align: 'center' }
@@ -1065,7 +1065,7 @@ export async function generateBrandedResponseReportPDF(
         margins: { top: 50, bottom: 60, left: 50, right: 50 },
         info: {
           Title: `Response Time Report - ${companyName}`,
-          Author: branding.hidePoweredBy ? companyName : 'WorkflowMD Response Tracker',
+          Author: branding.hidePoweredBy ? companyName : 'FirstResponse',
           Subject: 'Response Time Analytics',
           CreationDate: new Date()
         },
@@ -1084,7 +1084,7 @@ export async function generateBrandedResponseReportPDF(
       const addBrandedFooter = () => {
         const pageNum = doc.bufferedPageRange().count;
         let footerText = branding.customFooterText || 
-          (branding.hidePoweredBy ? companyName : 'WorkflowMD Response Tracker');
+          (branding.hidePoweredBy ? companyName : 'FirstResponse');
         footerText += `  •  Page ${pageNum}  •  Generated ${new Date().toLocaleString()}`;
         
         doc.fontSize(8)

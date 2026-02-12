@@ -259,7 +259,7 @@ const BrandingSettings: React.FC = () => {
               <Space direction="vertical" size="small">
                 <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Custom logo on all reports</Text>
                 <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Your brand colors throughout</Text>
-                <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Remove "Powered by WorkflowMD"</Text>
+                <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Remove "Powered by FirstResponse"</Text>
                 <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Shareable client links</Text>
                 <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Custom footer text</Text>
               </Space>
@@ -491,7 +491,7 @@ const BrandingSettings: React.FC = () => {
                 {form.getFieldValue('customFooterText') || 
                   (form.getFieldValue('hidePoweredBy') 
                     ? form.getFieldValue('companyName') || 'Your Company'
-                    : 'WorkflowMD Response Tracker'
+                    : 'FirstResponse'
                   )
                 }
               </div>

@@ -774,7 +774,7 @@ const Settings: React.FC = () => {
                           // Simulate OAuth redirect
                           setTimeout(() => {
                             setSlackConnecting(false);
-                            toast.info('Slack OAuth coming soon! This will redirect you to authorize WorkflowMD in your Slack workspace.');
+                            toast.info('Slack OAuth coming soon! This will redirect you to authorize FirstResponse in your Slack workspace.');
                           }, 1000);
                         }}
                       >
@@ -815,7 +815,7 @@ const Settings: React.FC = () => {
                           setZapierConnecting(true);
                           setTimeout(() => {
                             setZapierConnecting(false);
-                            toast.info('Zapier integration coming soon! You\'ll be able to trigger Zaps when workflow issues are detected.');
+                            toast.info('Zapier integration coming soon! You\'ll be able to trigger Zaps when response time issues are detected.');
                           }, 1000);
                         }}
                       >
@@ -857,13 +857,13 @@ const Settings: React.FC = () => {
                     <Title level={4}>White-Label Branding</Title>
                     <Paragraph type="secondary" style={{ marginBottom: 24 }}>
                       Customize how your reports look when shared with clients.
-                      Add your logo, brand colors, and remove WorkflowMD branding.
+                      Add your logo, brand colors, and remove FirstResponse branding.
                     </Paragraph>
 
                     <Space direction="vertical" size="small" style={{ marginBottom: 24 }}>
                       <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Custom logo on all reports</Text>
                       <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Your brand colors throughout</Text>
-                      <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Remove "Powered by WorkflowMD"</Text>
+                      <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Remove "Powered by FirstResponse"</Text>
                       <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Shareable client report links</Text>
                     </Space>
 

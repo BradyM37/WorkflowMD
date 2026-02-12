@@ -175,9 +175,9 @@ const Landing: React.FC = () => {
         borderBottom: '1px solid rgba(0,0,0,0.05)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 28 }}>🔍</span>
+          <span style={{ fontSize: 28 }}>🚀</span>
           <Title level={4} style={{ margin: 0, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            WorkflowMD
+            FirstResponse
           </Title>
         </div>
         <Space size="large" className="desktop-nav">
@@ -499,14 +499,14 @@ const Landing: React.FC = () => {
       }}>
         <Space direction="vertical" size="small">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
-            <span style={{ fontSize: 24 }}>🔍</span>
-            <Text strong style={{ color: 'white', fontSize: 18 }}>WorkflowMD</Text>
+            <span style={{ fontSize: 24 }}>🚀</span>
+            <Text strong style={{ color: 'white', fontSize: 18 }}>FirstResponse</Text>
           </div>
           <Text style={{ color: 'rgba(255,255,255,0.5)' }}>
-            Speed-to-Lead Analytics for GoHighLevel
+            Win Every Lead. Respond First.
           </Text>
           <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
-            © 2026 WorkflowMD. All rights reserved.
+            �
           </Text>
         </Space>
       </Footer>

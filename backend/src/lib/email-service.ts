@@ -5,8 +5,8 @@ import sgMail from '@sendgrid/mail';
 import { logger } from './logger';
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'noreply@workflowdebugger.com';
-const FROM_NAME = process.env.SENDGRID_FROM_NAME || 'WorkflowMD';
+const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'noreply@firstresponse.app';
+const FROM_NAME = process.env.SENDGRID_FROM_NAME || 'FirstResponse';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3001';
 
 if (SENDGRID_API_KEY) {
@@ -72,18 +72,18 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
 
 export async function sendPasswordResetEmail(email: string, resetUrl: string): Promise<void> {
   const html = `<html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px"><div style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:30px;text-align:center;border-radius:8px 8px 0 0"><h1>?? Reset Password</h1></div><div style="padding:30px;background:#f9fafb"><p>Click the button below to reset your password:</p><p style="text-align:center"><a href="${resetUrl}" style="display:inline-block;background:#667eea;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px">Reset Password</a></p><p style="color:#6b7280;font-size:14px">Or copy this link: ${resetUrl}</p><div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:12px;margin:16px 0"><strong>?? Security:</strong> Link expires in 24 hours</div></div></body></html>`;
-  await sendEmail({ to: email, subject: 'Reset Your Password - WorkflowMD', html });
+  await sendEmail({ to: email, subject: 'Reset Your Password - FirstResponse', html });
 }
 
 export async function sendEmailVerification(email: string, verifyUrl: string): Promise<void> {
   const html = `<html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px"><div style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:30px;text-align:center;border-radius:8px 8px 0 0"><h1>? Verify Email</h1></div><div style="padding:30px;background:#f9fafb"><p>Welcome! Please verify your email address:</p><p style="text-align:center"><a href="${verifyUrl}" style="display:inline-block;background:#10b981;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px">Verify Email</a></p><p style="color:#6b7280;font-size:14px">Or copy this link: ${verifyUrl}</p></div></body></html>`;
-  await sendEmail({ to: email, subject: 'Verify Your Email - WorkflowMD', html });
+  await sendEmail({ to: email, subject: 'Verify Your Email - FirstResponse', html });
 }
 
 export async function sendWelcomeEmail(email: string, name: string): Promise<void> {
   const greeting = name ? `Hi ${name},` : 'Hello,';
-  const html = `<html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px"><div style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:30px;text-align:center;border-radius:8px 8px 0 0"><h1>?? Welcome!</h1></div><div style="padding:30px;background:#f9fafb"><p>${greeting}</p><p>Thank you for joining WorkflowMD! Get started in 3 steps:</p><div style="background:#d1fae5;border-left:4px solid #10b981;padding:12px;margin:12px 0"><strong>1. Connect GHL Account</strong></div><div style="background:#d1fae5;border-left:4px solid #10b981;padding:12px;margin:12px 0"><strong>2. Import Workflows</strong></div><div style="background:#d1fae5;border-left:4px solid #10b981;padding:12px;margin:12px 0"><strong>3. Run Analysis</strong></div><p style="text-align:center"><a href="${FRONTEND_URL}/dashboard" style="display:inline-block;background:#667eea;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px">Go to Dashboard</a></p></div></body></html>`;
-  await sendEmail({ to: email, subject: 'Welcome to WorkflowMD!', html });
+  const html = `<html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px"><div style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:30px;text-align:center;border-radius:8px 8px 0 0"><h1>?? Welcome!</h1></div><div style="padding:30px;background:#f9fafb"><p>${greeting}</p><p>Thank you for joining FirstResponse! Get started in 3 steps:</p><div style="background:#d1fae5;border-left:4px solid #10b981;padding:12px;margin:12px 0"><strong>1. Connect GHL Account</strong></div><div style="background:#d1fae5;border-left:4px solid #10b981;padding:12px;margin:12px 0"><strong>2. Import Workflows</strong></div><div style="background:#d1fae5;border-left:4px solid #10b981;padding:12px;margin:12px 0"><strong>3. Run Analysis</strong></div><p style="text-align:center"><a href="${FRONTEND_URL}/dashboard" style="display:inline-block;background:#667eea;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px">Go to Dashboard</a></p></div></body></html>`;
+  await sendEmail({ to: email, subject: 'Welcome to FirstResponse!', html });
 }
 
 export async function sendWorkflowFailureAlert(email: string, alert: WorkflowAlert): Promise<void> {
@@ -108,7 +108,7 @@ export function checkEmailRateLimit(email: string, max: number = 10): boolean { 
 export function clearEmailRateLimit(email: string): void {}
 export async function testEmailConfiguration(email: string): Promise<boolean> { 
   try {
-    await sendEmail({ to: email, subject: 'Test Email - WorkflowMD', html: '<html><body><h1>? Test Successful</h1><p>Your SendGrid email configuration is working correctly!</p></body></html>' });
+    await sendEmail({ to: email, subject: 'Test Email - FirstResponse', html: '<html><body><h1>? Test Successful</h1><p>Your SendGrid email configuration is working correctly!</p></body></html>' });
     return true;
   } catch {
     return false;
