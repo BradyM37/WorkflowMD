@@ -117,6 +117,14 @@ function AppHeader() {
               >
                 Settings
               </Button>
+              <Button 
+                icon={<QuestionCircleOutlined />}
+                onClick={() => navigate('/help')}
+                type="text"
+                style={{ color: 'white' }}
+              >
+                Help
+              </Button>
               {subscription !== 'pro' && (
                 <Button 
                   icon={<CrownOutlined />}
@@ -213,6 +221,18 @@ function AppHeader() {
             block
           >
             Settings
+          </Button>
+
+          <Button 
+            icon={<QuestionCircleOutlined />}
+            onClick={() => {
+              navigate('/help');
+              setMobileMenuVisible(false);
+            }}
+            size="large"
+            block
+          >
+            Help
           </Button>
 
           {subscription !== 'pro' && (
@@ -362,6 +382,14 @@ function AppContent() {
                 element={
                   <PrivateRoute>
                     <Settings />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/help"
+                element={
+                  <PrivateRoute>
+                    <Help />
                   </PrivateRoute>
                 }
               />

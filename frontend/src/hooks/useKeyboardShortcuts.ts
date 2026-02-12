@@ -73,6 +73,22 @@ export const useKeyboardShortcuts = (shortcuts?: ShortcutConfig[]) => {
       },
     },
     {
+      key: 'h',
+      ctrl: true,
+      description: 'Go to Help',
+      action: () => {
+        navigate('/help');
+        notifyShortcut('Help', 'Ctrl+H');
+      },
+    },
+    {
+      key: '?',
+      description: 'Show Keyboard Shortcuts',
+      action: () => {
+        showShortcutsHelp();
+      },
+    },
+    {
       key: 'Escape',
       description: 'Close Modal/Clear Search',
       action: () => {

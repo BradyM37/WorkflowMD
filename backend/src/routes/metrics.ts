@@ -74,6 +74,7 @@ metricsRouter.get(
 /**
  * GET /api/metrics/missed
  * Get list of missed conversations (leads needing follow-up)
+ * Supports advanced filtering via query params
  */
 metricsRouter.get(
   '/missed',
@@ -82,14 +83,139 @@ metricsRouter.get(
   asyncHandler(async (req: any, res: any) => {
     const locationId = req.locationId;
     const limit = parseInt(req.query.limit as string) || 20;
+    const offset = parseInt(req.query.offset as string) || 0;
     
-    logger.info('Fetching missed conversations', { locationId, limit, requestId: req.id });
+    // Advanced filter params
+    const search = req.query.search as string || '';
+    const channels = req.query.channel ? (Array.isArray(req.query.channel) ? req.query.channel : [req.query.channel]) : [];
+    const userId = req.query.userId as string || null;
+    const status = req.query.status ? (Array.isArray(req.query.status) ? req.query.status : [req.query.status]) : [];
+    const minTime = req.query.minTime ? parseInt(req.query.minTime as string) : null;
+    const maxTime = req.query.maxTime ? parseInt(req.query.maxTime as string) : null;
+    const startDate = req.query.startDate as string || null;
+    const endDate = req.query.endDate as string || null;
     
-    const missed = await getMissedConversations(locationId, limit);
+    logger.info('Fetching missed conversations with filters', { 
+      locationId, limit, offset, search, channels, userId, status, 
+      minTime, maxTime, startDate, endDate, requestId: req.id 
+    });
+    
+    // Build dynamic query with filters
+    let whereConditions = ['location_id = $1'];
+    let params: any[] = [locationId];
+    let paramIndex = 2;
+    
+    // Search filter (name, phone, email)
+    if (search) {
+      whereConditions.push(`(
+        contact_name ILIKE $${paramIndex} OR 
+        contact_phone ILIKE $${paramIndex} OR 
+        contact_email ILIKE $${paramIndex}
+      )`);
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+    
+    // Channel filter
+    if (channels.length > 0) {
+      whereConditions.push(`channel = ANY($${paramIndex})`);
+      params.push(channels);
+      paramIndex++;
+    }
+    
+    // User filter
+    if (userId) {
+      if (userId === 'unassigned') {
+        whereConditions.push('assigned_user_id IS NULL');
+      } else {
+        whereConditions.push(`assigned_user_id = $${paramIndex}`);
+        params.push(userId);
+        paramIndex++;
+      }
+    }
+    
+    // Status filter
+    if (status.length > 0) {
+      const statusConditions: string[] = [];
+      if (status.includes('missed')) statusConditions.push('is_missed = true');
+      if (status.includes('responded')) statusConditions.push('(is_missed = false AND first_response_at IS NOT NULL)');
+      if (status.includes('pending')) statusConditions.push('(first_response_at IS NULL AND is_missed = false)');
+      if (statusConditions.length > 0) {
+        whereConditions.push(`(${statusConditions.join(' OR ')})`);
+      }
+    } else {
+      // Default: only missed
+      whereConditions.push('is_missed = true');
+    }
+    
+    // Response time range filter
+    if (minTime !== null) {
+      whereConditions.push(`response_time_seconds >= $${paramIndex}`);
+      params.push(minTime);
+      paramIndex++;
+    }
+    if (maxTime !== null) {
+      whereConditions.push(`response_time_seconds <= $${paramIndex}`);
+      params.push(maxTime);
+      paramIndex++;
+    }
+    
+    // Date range filter
+    if (startDate) {
+      whereConditions.push(`first_inbound_at >= $${paramIndex}`);
+      params.push(new Date(startDate));
+      paramIndex++;
+    }
+    if (endDate) {
+      whereConditions.push(`first_inbound_at <= $${paramIndex}`);
+      params.push(new Date(endDate));
+      paramIndex++;
+    }
+    
+    const whereClause = whereConditions.join(' AND ');
+    
+    // Get total count for pagination
+    const countResult = await pool.query(
+      `SELECT COUNT(*) FROM conversations WHERE ${whereClause}`,
+      params
+    );
+    const totalCount = parseInt(countResult.rows[0].count);
+    
+    // Get filtered conversations
+    const result = await pool.query(`
+      SELECT 
+        id, ghl_conversation_id, contact_name, contact_email, contact_phone,
+        channel, first_inbound_at, first_response_at, response_time_seconds,
+        is_missed, assigned_user_id, assigned_user_name, status
+      FROM conversations
+      WHERE ${whereClause}
+      ORDER BY first_inbound_at DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `, [...params, limit, offset]);
+    
+    const conversations = result.rows.map(row => ({
+      id: row.id,
+      ghlConversationId: row.ghl_conversation_id,
+      contactName: row.contact_name,
+      contactEmail: row.contact_email,
+      contactPhone: row.contact_phone,
+      channel: row.channel,
+      firstInboundAt: row.first_inbound_at,
+      firstResponseAt: row.first_response_at,
+      responseTimeSeconds: row.response_time_seconds,
+      isMissed: row.is_missed,
+      assignedUserId: row.assigned_user_id,
+      assignedUserName: row.assigned_user_name,
+      status: row.status
+    }));
     
     return ApiResponse.success(res, { 
-      conversations: missed,
-      count: missed.length
+      conversations,
+      count: conversations.length,
+      total: totalCount,
+      offset,
+      limit,
+      filters: { search, channels, userId, status, minTime, maxTime, startDate, endDate }
     });
   })
 );
@@ -1296,6 +1422,174 @@ metricsRouter.get(
     }));
     
     return ApiResponse.success(res, { trend, period: { days } });
+  })
+);
+
+/**
+ * GET /api/metrics/export
+ * Export filtered conversations to CSV
+ */
+metricsRouter.get(
+  '/export',
+  requireAuth,
+  requireGHLConnection,
+  asyncHandler(async (req: any, res: any) => {
+    const locationId = req.locationId;
+    const format = (req.query.format as string) || 'csv';
+    
+    // Same filter params as /missed endpoint
+    const search = req.query.search as string || '';
+    const channels = req.query.channel ? (Array.isArray(req.query.channel) ? req.query.channel : [req.query.channel]) : [];
+    const userId = req.query.userId as string || null;
+    const status = req.query.status ? (Array.isArray(req.query.status) ? req.query.status : [req.query.status]) : [];
+    const minTime = req.query.minTime ? parseInt(req.query.minTime as string) : null;
+    const maxTime = req.query.maxTime ? parseInt(req.query.maxTime as string) : null;
+    const startDate = req.query.startDate as string || null;
+    const endDate = req.query.endDate as string || null;
+    
+    logger.info('Exporting conversations', { 
+      locationId, format, search, channels, userId, status, requestId: req.id 
+    });
+    
+    // Build dynamic query with filters (same as /missed)
+    let whereConditions = ['location_id = $1'];
+    let params: any[] = [locationId];
+    let paramIndex = 2;
+    
+    if (search) {
+      whereConditions.push(`(
+        contact_name ILIKE $${paramIndex} OR 
+        contact_phone ILIKE $${paramIndex} OR 
+        contact_email ILIKE $${paramIndex}
+      )`);
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+    
+    if (channels.length > 0) {
+      whereConditions.push(`channel = ANY($${paramIndex})`);
+      params.push(channels);
+      paramIndex++;
+    }
+    
+    if (userId) {
+      if (userId === 'unassigned') {
+        whereConditions.push('assigned_user_id IS NULL');
+      } else {
+        whereConditions.push(`assigned_user_id = $${paramIndex}`);
+        params.push(userId);
+        paramIndex++;
+      }
+    }
+    
+    if (status.length > 0) {
+      const statusConditions: string[] = [];
+      if (status.includes('missed')) statusConditions.push('is_missed = true');
+      if (status.includes('responded')) statusConditions.push('(is_missed = false AND first_response_at IS NOT NULL)');
+      if (status.includes('pending')) statusConditions.push('(first_response_at IS NULL AND is_missed = false)');
+      if (statusConditions.length > 0) {
+        whereConditions.push(`(${statusConditions.join(' OR ')})`);
+      }
+    }
+    
+    if (minTime !== null) {
+      whereConditions.push(`response_time_seconds >= $${paramIndex}`);
+      params.push(minTime);
+      paramIndex++;
+    }
+    if (maxTime !== null) {
+      whereConditions.push(`response_time_seconds <= $${paramIndex}`);
+      params.push(maxTime);
+      paramIndex++;
+    }
+    
+    if (startDate) {
+      whereConditions.push(`first_inbound_at >= $${paramIndex}`);
+      params.push(new Date(startDate));
+      paramIndex++;
+    }
+    if (endDate) {
+      whereConditions.push(`first_inbound_at <= $${paramIndex}`);
+      params.push(new Date(endDate));
+      paramIndex++;
+    }
+    
+    const whereClause = whereConditions.join(' AND ');
+    
+    // Get all matching conversations (limit to 10000 for safety)
+    const result = await pool.query(`
+      SELECT 
+        contact_name, contact_email, contact_phone,
+        channel, first_inbound_at, first_response_at, response_time_seconds,
+        is_missed, assigned_user_name, status
+      FROM conversations
+      WHERE ${whereClause}
+      ORDER BY first_inbound_at DESC
+      LIMIT 10000
+    `, params);
+    
+    if (format === 'json') {
+      return ApiResponse.success(res, { 
+        conversations: result.rows,
+        count: result.rows.length,
+        exportedAt: new Date().toISOString()
+      });
+    }
+    
+    // Generate CSV
+    const csvHeader = [
+      'Contact Name',
+      'Email',
+      'Phone',
+      'Channel',
+      'First Message',
+      'First Response',
+      'Response Time (seconds)',
+      'Response Time (formatted)',
+      'Missed',
+      'Assigned To',
+      'Status'
+    ].join(',');
+    
+    const formatResponseTime = (seconds: number | null): string => {
+      if (seconds === null || seconds === undefined) return 'N/A';
+      if (seconds < 60) return `${seconds}s`;
+      if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+      const hours = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      return `${hours}h ${mins}m`;
+    };
+    
+    const escapeCSV = (val: any): string => {
+      if (val === null || val === undefined) return '';
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+    
+    const csvRows = result.rows.map(row => [
+      escapeCSV(row.contact_name),
+      escapeCSV(row.contact_email),
+      escapeCSV(row.contact_phone),
+      escapeCSV(row.channel),
+      row.first_inbound_at ? new Date(row.first_inbound_at).toISOString() : '',
+      row.first_response_at ? new Date(row.first_response_at).toISOString() : '',
+      row.response_time_seconds ?? '',
+      formatResponseTime(row.response_time_seconds),
+      row.is_missed ? 'Yes' : 'No',
+      escapeCSV(row.assigned_user_name),
+      escapeCSV(row.status)
+    ].join(','));
+    
+    const csv = [csvHeader, ...csvRows].join('\n');
+    
+    const filename = `conversations-export-${new Date().toISOString().split('T')[0]}.csv`;
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.send(csv);
   })
 );
 
