@@ -9,7 +9,8 @@ import {
   SettingOutlined,
   BulbOutlined,
   BulbFilled,
-  MenuOutlined
+  MenuOutlined,
+  QuestionCircleOutlined
 } from '@ant-design/icons';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -26,6 +27,7 @@ import ResponseDashboard from './pages/ResponseDashboard';
 import ResponseSettings from './pages/ResponseSettings';
 import BrandingSettings from './pages/BrandingSettings';
 import SharedReportView from './pages/SharedReportView';
+import Help from './pages/Help';
 import Onboarding from './pages/Onboarding';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';

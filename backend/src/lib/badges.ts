@@ -5,6 +5,7 @@
 
 import { pool } from './database';
 import { logger } from './logger';
+import { notifyBadgeEarned } from './notifications';
 
 export const BADGE_TYPES = {
   SPEED_DEMON: 'speed_demon',      // Response in <1 minute
@@ -158,6 +159,20 @@ async function awardBadge(
     if (result.rows.length === 0) return null;
 
     const row = result.rows[0];
+    
+    // Create in-app notification for badge earned
+    const badgeInfo = BADGE_INFO[badgeType];
+    if (badgeInfo) {
+      await notifyBadgeEarned(
+        locationId,
+        userId,
+        userName,
+        badgeType,
+        badgeInfo.label,
+        badgeInfo.icon
+      );
+    }
+    
     return {
       id: row.id,
       userId: row.user_id,

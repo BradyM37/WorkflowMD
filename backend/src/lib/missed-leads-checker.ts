@@ -7,6 +7,7 @@
 import { pool } from './database';
 import { logger } from './logger';
 import { checkAndAlertWaitingLeads } from './slack-alerts';
+import { notifyMissedLead } from './notifications';
 
 const MISSED_THRESHOLD_SECONDS = 3600; // 1 hour
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // Check every 5 minutes
@@ -55,6 +56,11 @@ async function checkForMissedLeads(): Promise<void> {
           contactName: r.contact_name
         }))
       });
+      
+      // Create notifications for each missed lead
+      for (const row of result.rows) {
+        await notifyMissedLead(row.location_id, row.contact_name || 'Unknown', row.id);
+      }
     }
 
     // Then check for Slack alerts across all active locations
