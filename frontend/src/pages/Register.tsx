@@ -98,7 +98,7 @@ const Register: React.FC = () => {
               
               <Title level={2} style={{ marginBottom: '8px' }}>Create Your Account</Title>
               <Text style={{ color: '#595959' }}>
-                Start analyzing workflows in seconds
+                Track response times and win more leads
               </Text>
             </div>
 
@@ -229,15 +229,15 @@ const Register: React.FC = () => {
                 </Text>
                 <div>
                   <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '8px' }} />
-                  <Text style={{ color: isDarkMode ? '#d9d9d9' : '#595959' }}>Free tier: 3 analyses per month</Text>
+                  <Text style={{ color: isDarkMode ? '#d9d9d9' : '#595959' }}>Real-time speed-to-lead tracking</Text>
                 </div>
                 <div>
                   <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '8px' }} />
-                  <Text style={{ color: isDarkMode ? '#d9d9d9' : '#595959' }}>Instant workflow scanning</Text>
+                  <Text style={{ color: isDarkMode ? '#d9d9d9' : '#595959' }}>Team response time analytics</Text>
                 </div>
                 <div>
                   <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '8px' }} />
-                  <Text style={{ color: isDarkMode ? '#d9d9d9' : '#595959' }}>Risk scoring & recommendations</Text>
+                  <Text style={{ color: isDarkMode ? '#d9d9d9' : '#595959' }}>Alerts when leads go cold</Text>
                 </div>
               </Space>
             </div>

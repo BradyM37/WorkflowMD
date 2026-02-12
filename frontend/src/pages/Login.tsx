@@ -58,19 +58,19 @@ const Login: React.FC = () => {
 
   const features = [
     {
-      icon: <SafetyOutlined style={{ fontSize: '24px', color: '#667eea' }} />,
-      title: 'Risk Scoring',
-      description: 'Get instant risk assessment with 0-100 scoring'
-    },
-    {
       icon: <ThunderboltOutlined style={{ fontSize: '24px', color: '#667eea' }} />,
-      title: 'Fast Analysis',
-      description: 'Analyze complex workflows in just 3-5 seconds'
+      title: 'Speed-to-Lead Tracking',
+      description: 'Know exactly how fast you respond to every lead'
     },
     {
       icon: <DashboardOutlined style={{ fontSize: '24px', color: '#667eea' }} />,
-      title: 'Actionable Fixes',
-      description: 'Get specific solutions for every issue found'
+      title: 'Response Time Analytics',
+      description: 'Track team performance with real-time dashboards'
+    },
+    {
+      icon: <SafetyOutlined style={{ fontSize: '24px', color: '#667eea' }} />,
+      title: 'Win More Deals',
+      description: 'Faster response times = higher close rates'
     }
   ];
 
@@ -99,8 +99,8 @@ const Login: React.FC = () => {
               </Title>
               
               <Paragraph style={{ fontSize: '20px', color: colors.mutedText, marginBottom: '32px' }}>
-                Find and fix workflow issues before they cost you revenue. 
-                Analyze your GoHighLevel workflows in seconds.
+                Track your speed-to-lead and win more deals. 
+                See exactly how fast your team responds to every lead.
               </Paragraph>
 
               <Space direction="vertical" size="large" style={{ width: '100%' }}>
@@ -261,11 +261,15 @@ const Login: React.FC = () => {
                     </Text>
                     <div>
                       <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '8px' }} />
-                      <Text style={{ color: colors.bodyText }}>Free: See 3 issues per analysis</Text>
+                      <Text style={{ color: colors.bodyText }}>Starter ($47/mo): Track up to 100 leads/month</Text>
                     </div>
                     <div>
                       <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '8px' }} />
-                      <Text style={{ color: colors.bodyText }}>Pro ($297/mo): Unlimited analysis with full reports</Text>
+                      <Text style={{ color: colors.bodyText }}>Growth ($97/mo): 500 leads + team analytics</Text>
+                    </div>
+                    <div>
+                      <CheckCircleOutlined style={{ color: '#52c41a', marginRight: '8px' }} />
+                      <Text style={{ color: colors.bodyText }}>Scale ($197/mo): Unlimited leads + API access</Text>
                     </div>
                   </Space>
                 </div>
