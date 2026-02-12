@@ -1,52 +1,68 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useMemo, useCallback, useState } from 'react';
 
-export type PlanType = 'free' | 'pro' | 'agency';
+export type PlanType = 'free' | 'starter' | 'pro' | 'agency';
 
 export interface PlanLimits {
   historyDays: number;
-  maxInsights: number;
+  maxLocations: number;
+  maxTeamMembers: number;
+  alertsPerWeek: number;
   exportEnabled: boolean;
-  alertsEnabled: boolean;
-  teamAnalytics: boolean;
   aiInsights: boolean;
+  slackEnabled: boolean;
+  revenueAttribution: boolean;
   whiteLabelEnabled: boolean;
-  shareableReports: boolean;
   apiAccess: boolean;
 }
 
 const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
   free: {
     historyDays: 7,
-    maxInsights: 3,
+    maxLocations: 1,
+    maxTeamMembers: 3,
+    alertsPerWeek: 5,
     exportEnabled: false,
-    alertsEnabled: false,
-    teamAnalytics: false,
     aiInsights: false,
+    slackEnabled: false,
+    revenueAttribution: false,
     whiteLabelEnabled: false,
-    shareableReports: false,
+    apiAccess: false,
+  },
+  starter: {
+    historyDays: 30,
+    maxLocations: 3,
+    maxTeamMembers: 10,
+    alertsPerWeek: -1, // Unlimited
+    exportEnabled: true,
+    aiInsights: false,
+    slackEnabled: false,
+    revenueAttribution: false,
+    whiteLabelEnabled: false,
     apiAccess: false,
   },
   pro: {
-    historyDays: 365,
-    maxInsights: 50,
+    historyDays: 90,
+    maxLocations: 10,
+    maxTeamMembers: 25,
+    alertsPerWeek: -1, // Unlimited
     exportEnabled: true,
-    alertsEnabled: true,
-    teamAnalytics: true,
     aiInsights: true,
+    slackEnabled: true,
+    revenueAttribution: true,
     whiteLabelEnabled: false,
-    shareableReports: false,
     apiAccess: false,
   },
   agency: {
-    historyDays: -1, // Unlimited
-    maxInsights: -1, // Unlimited
+    historyDays: 365,
+    maxLocations: 50,
+    maxTeamMembers: -1, // Unlimited
+    alertsPerWeek: -1, // Unlimited
     exportEnabled: true,
-    alertsEnabled: true,
-    teamAnalytics: true,
     aiInsights: true,
+    slackEnabled: true,
+    revenueAttribution: true,
     whiteLabelEnabled: true,
-    shareableReports: true,
     apiAccess: true,
   },
 };
@@ -63,25 +79,28 @@ export interface UsePlanReturn {
   showUpgradePrompt: boolean;
   setShowUpgradePrompt: (show: boolean) => void;
   promptFeature: string | null;
-  triggerUpgradePrompt: (feature: string, requiredPlan?: 'pro' | 'agency') => void;
-  requiredPlanForPrompt: 'pro' | 'agency';
+  triggerUpgradePrompt: (feature: string, requiredPlan?: 'starter' | 'pro' | 'agency') => void;
+  requiredPlanForPrompt: 'starter' | 'pro' | 'agency';
+  isStarter: boolean;
 }
 
 export function usePlan(): UsePlanReturn {
   const { subscription } = useAuth();
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [promptFeature, setPromptFeature] = useState<string | null>(null);
-  const [requiredPlanForPrompt, setRequiredPlanForPrompt] = useState<'pro' | 'agency'>('pro');
+  const [requiredPlanForPrompt, setRequiredPlanForPrompt] = useState<'starter' | 'pro' | 'agency'>('starter');
 
-  // Map subscription to plan type (support for legacy 'pro' status)
+  // Map subscription to plan type
   const planType: PlanType = useMemo(() => {
+    if (subscription === 'starter') return 'starter';
     if (subscription === 'pro') return 'pro';
-    if (subscription === 'agency') return 'agency' as PlanType;
+    if (subscription === 'agency') return 'agency';
     return 'free';
   }, [subscription]);
 
   const limits = useMemo(() => PLAN_LIMITS[planType], [planType]);
 
+  const isStarter = planType === 'starter' || planType === 'pro' || planType === 'agency';
   const isPro = planType === 'pro' || planType === 'agency';
   const isAgency = planType === 'agency';
   const isFree = planType === 'free';
@@ -130,7 +149,7 @@ export function usePlan(): UsePlanReturn {
   );
 
   const triggerUpgradePrompt = useCallback(
-    (feature: string, requiredPlan: 'pro' | 'agency' = 'pro') => {
+    (feature: string, requiredPlan: 'starter' | 'pro' | 'agency' = 'starter') => {
       setPromptFeature(feature);
       setRequiredPlanForPrompt(requiredPlan);
       setShowUpgradePrompt(true);
@@ -141,6 +160,7 @@ export function usePlan(): UsePlanReturn {
   return {
     planType,
     limits,
+    isStarter,
     isPro,
     isAgency,
     isFree,

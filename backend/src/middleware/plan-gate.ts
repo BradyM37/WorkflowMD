@@ -7,7 +7,7 @@ import { Request, Response, NextFunction } from 'express';
 import { pool } from '../lib/database';
 import { logger } from '../lib/logger';
 
-export type PlanType = 'free' | 'pro' | 'agency';
+export type PlanType = 'free' | 'starter' | 'pro' | 'agency';
 
 // AuthenticatedRequest type is now globally extended via src/types/express.d.ts
 export type AuthenticatedRequest = Request;
@@ -67,6 +67,44 @@ export async function attachPlanInfo(
  * Middleware: Require Pro or Agency plan
  * Free users get 403 with upgrade message
  */
+export function requireStarter(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): void {
+  const planType = req.planType || 'free';
+
+  if (planType === 'starter' || planType === 'pro' || planType === 'agency') {
+    return next();
+  }
+
+  logger.info('Starter feature blocked for free user', {
+    locationId: req.locationId,
+    planType,
+    path: (req as any).path
+  });
+
+  res.status(403).json({
+    success: false,
+    error: {
+      code: 'UPGRADE_REQUIRED',
+      message: 'This feature requires a Starter subscription',
+      upgrade: {
+        currentPlan: planType,
+        requiredPlan: 'starter',
+        features: [
+          '30 days history',
+          '3 locations',
+          '10 team members',
+          'Unlimited alerts',
+          'CSV export'
+        ],
+        upgradeUrl: 'https://marketplace.gohighlevel.com/app/YOUR_APP_ID'
+      }
+    }
+  });
+}
+
 export function requirePro(
   req: AuthenticatedRequest,
   res: Response,
@@ -78,7 +116,7 @@ export function requirePro(
     return next();
   }
 
-  logger.info('Pro feature blocked for free user', {
+  logger.info('Pro feature blocked', {
     locationId: req.locationId,
     planType,
     path: (req as any).path
@@ -93,11 +131,12 @@ export function requirePro(
         currentPlan: planType,
         requiredPlan: 'pro',
         features: [
-          'Full workflow history (unlimited)',
-          'Export reports (CSV, PDF)',
-          'Slack/email alerts',
-          'Team analytics',
-          'AI-powered insights'
+          '90 days history',
+          '10 locations',
+          '25 team members',
+          'AI insights',
+          'Slack integration',
+          'Revenue attribution'
         ],
         upgradeUrl: 'https://marketplace.gohighlevel.com/app/YOUR_APP_ID'
       }
@@ -135,12 +174,11 @@ export function requireAgency(
         currentPlan: planType,
         requiredPlan: 'agency',
         features: [
-          'Everything in Pro',
+          '1 year history',
+          '50 locations',
+          'Unlimited team members',
           'White-label branding',
-          'Shareable client reports',
-          'API access',
-          'Multi-location management',
-          'Priority support'
+          'Full API access'
         ],
         upgradeUrl: 'https://marketplace.gohighlevel.com/app/YOUR_APP_ID'
       }
@@ -154,35 +192,50 @@ export function requireAgency(
 export const PLAN_LIMITS = {
   free: {
     historyDays: 7,
-    maxInsights: 3,
+    maxLocations: 1,
+    maxTeamMembers: 3,
+    alertsPerWeek: 5,
     exportEnabled: false,
-    alertsEnabled: false,
-    teamAnalytics: false,
     aiInsights: false,
+    slackEnabled: false,
+    revenueAttribution: false,
     whiteLabelEnabled: false,
-    shareableReports: false,
+    apiAccess: false
+  },
+  starter: {
+    historyDays: 30,
+    maxLocations: 3,
+    maxTeamMembers: 10,
+    alertsPerWeek: -1, // Unlimited
+    exportEnabled: true,
+    aiInsights: false,
+    slackEnabled: false,
+    revenueAttribution: false,
+    whiteLabelEnabled: false,
     apiAccess: false
   },
   pro: {
-    historyDays: 365,
-    maxInsights: 50,
+    historyDays: 90,
+    maxLocations: 10,
+    maxTeamMembers: 25,
+    alertsPerWeek: -1, // Unlimited
     exportEnabled: true,
-    alertsEnabled: true,
-    teamAnalytics: true,
     aiInsights: true,
+    slackEnabled: true,
+    revenueAttribution: true,
     whiteLabelEnabled: false,
-    shareableReports: false,
     apiAccess: false
   },
   agency: {
-    historyDays: -1, // Unlimited
-    maxInsights: -1, // Unlimited
+    historyDays: 365,
+    maxLocations: 50,
+    maxTeamMembers: -1, // Unlimited
+    alertsPerWeek: -1, // Unlimited
     exportEnabled: true,
-    alertsEnabled: true,
-    teamAnalytics: true,
     aiInsights: true,
+    slackEnabled: true,
+    revenueAttribution: true,
     whiteLabelEnabled: true,
-    shareableReports: true,
     apiAccess: true
   }
 } as const;

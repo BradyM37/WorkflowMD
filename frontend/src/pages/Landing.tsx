@@ -96,45 +96,57 @@ const Landing: React.FC = () => {
       period: '/month',
       description: 'Perfect for getting started',
       features: [
-        'Up to 100 leads/month',
-        'Basic response tracking',
-        'Daily summary email',
-        '7-day data retention',
-        'Community support'
+        '7 days history',
+        '1 location',
+        '3 team members',
+        '5 missed alerts/week',
+        'Basic dashboard'
       ],
       cta: 'Start Free',
       highlighted: false
     },
     {
+      name: 'Starter',
+      price: '$47',
+      period: '/month',
+      description: 'For small teams',
+      features: [
+        '30 days history',
+        '3 locations',
+        '10 team members',
+        'Unlimited alerts',
+        'CSV export'
+      ],
+      cta: 'Start Starter Trial',
+      highlighted: false
+    },
+    {
       name: 'Pro',
-      price: '$100',
+      price: '$97',
       period: '/month',
       description: 'For growing teams',
       features: [
-        'Unlimited leads',
-        'Advanced analytics',
-        'Real-time alerts',
-        'Team leaderboards',
-        '90-day data retention',
-        'Priority support',
-        'Custom reports'
+        '90 days history',
+        '10 locations',
+        '25 team members',
+        'AI insights',
+        'Slack integration',
+        'Revenue attribution'
       ],
       cta: 'Start Pro Trial',
       highlighted: true
     },
     {
       name: 'Agency',
-      price: '$200',
+      price: '$197',
       period: '/month',
       description: 'For agencies & enterprises',
       features: [
-        'Everything in Pro',
-        'Multi-location support',
-        'White-label reports',
-        'API access',
-        'Unlimited data retention',
-        'Dedicated account manager',
-        'Custom integrations'
+        '1 year history',
+        '50 locations',
+        'Unlimited team members',
+        'White-label branding',
+        'Full API access'
       ],
       cta: 'Contact Sales',
       highlighted: false

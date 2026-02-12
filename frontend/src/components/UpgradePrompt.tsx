@@ -13,8 +13,8 @@ const { Title, Text } = Typography;
 interface UpgradePromptProps {
   isOpen: boolean;
   onClose: () => void;
-  currentPlan: 'free' | 'pro' | 'agency';
-  requiredPlan?: 'pro' | 'agency';
+  currentPlan: 'free' | 'starter' | 'pro' | 'agency';
+  requiredPlan?: 'starter' | 'pro' | 'agency';
   feature?: string;
 }
 
@@ -24,50 +24,65 @@ const FEATURES = {
     price: '$0',
     icon: <ThunderboltOutlined />,
     features: [
-      { name: 'Basic dashboard', included: true },
-      { name: '7-day history', included: true },
-      { name: 'Limited insights (3)', included: true },
-      { name: 'Export reports', included: false },
-      { name: 'Slack/email alerts', included: false },
-      { name: 'Team analytics', included: false },
+      { name: '7 days history', included: true },
+      { name: '1 location', included: true },
+      { name: '3 team members', included: true },
+      { name: '5 missed alerts/week', included: true },
+      { name: 'CSV export', included: false },
       { name: 'AI insights', included: false },
+      { name: 'Slack integration', included: false },
       { name: 'White-label branding', included: false },
-      { name: 'Shareable reports', included: false },
+      { name: 'API access', included: false },
+    ],
+  },
+  starter: {
+    name: 'Starter',
+    price: '$47/mo',
+    icon: <ThunderboltOutlined />,
+    features: [
+      { name: '30 days history', included: true },
+      { name: '3 locations', included: true },
+      { name: '10 team members', included: true },
+      { name: 'Unlimited alerts', included: true },
+      { name: 'CSV export', included: true },
+      { name: 'AI insights', included: false },
+      { name: 'Slack integration', included: false },
+      { name: 'White-label branding', included: false },
       { name: 'API access', included: false },
     ],
   },
   pro: {
     name: 'Pro',
-    price: '$100/mo',
+    price: '$97/mo',
     icon: <CrownOutlined />,
     popular: true,
     features: [
-      { name: 'Basic dashboard', included: true },
-      { name: 'Full history (365 days)', included: true },
-      { name: 'Unlimited insights', included: true },
-      { name: 'Export reports (CSV, PDF)', included: true },
-      { name: 'Slack/email alerts', included: true },
-      { name: 'Team analytics', included: true },
-      { name: 'AI-powered insights', included: true },
+      { name: '90 days history', included: true },
+      { name: '10 locations', included: true },
+      { name: '25 team members', included: true },
+      { name: 'Unlimited alerts', included: true },
+      { name: 'CSV export', included: true },
+      { name: 'AI insights', included: true },
+      { name: 'Slack integration', included: true },
+      { name: 'Revenue attribution', included: true },
       { name: 'White-label branding', included: false },
-      { name: 'Shareable reports', included: false },
       { name: 'API access', included: false },
     ],
   },
   agency: {
     name: 'Agency',
-    price: '$200/mo',
+    price: '$197/mo',
     icon: <BankOutlined />,
     features: [
-      { name: 'Basic dashboard', included: true },
-      { name: 'Unlimited history', included: true },
-      { name: 'Unlimited insights', included: true },
-      { name: 'Export reports (CSV, PDF)', included: true },
-      { name: 'Slack/email alerts', included: true },
-      { name: 'Team analytics', included: true },
-      { name: 'AI-powered insights', included: true },
+      { name: '1 year history', included: true },
+      { name: '50 locations', included: true },
+      { name: 'Unlimited team members', included: true },
+      { name: 'Unlimited alerts', included: true },
+      { name: 'CSV export', included: true },
+      { name: 'AI insights', included: true },
+      { name: 'Slack integration', included: true },
+      { name: 'Revenue attribution', included: true },
       { name: 'White-label branding', included: true },
-      { name: 'Shareable client reports', included: true },
       { name: 'Full API access', included: true },
     ],
   },
@@ -83,7 +98,7 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
   requiredPlan = 'pro',
   feature,
 }) => {
-  const handleUpgrade = (plan: 'pro' | 'agency') => {
+  const handleUpgrade = (plan: 'starter' | 'pro' | 'agency') => {
     window.open(`${MARKETPLACE_URL}?plan=${plan}`, '_blank');
   };
 
@@ -134,14 +149,13 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
 
       {/* Pricing Cards */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
-        {(['free', 'pro', 'agency'] as const).map((plan) => {
+        {(['free', 'starter', 'pro', 'agency'] as const).map((plan) => {
           const planData = FEATURES[plan];
           const isCurrentPlan = currentPlan === plan;
           const isPopular = 'popular' in planData && planData.popular;
-          const canUpgrade = plan !== 'free' && (
-            currentPlan === 'free' || 
-            (currentPlan === 'pro' && plan === 'agency')
-          );
+          const planOrder = ['free', 'starter', 'pro', 'agency'];
+          const canUpgrade = plan !== 'free' && 
+            planOrder.indexOf(plan) > planOrder.indexOf(currentPlan);
 
           return (
             <Col key={plan} xs={24} md={8}>
@@ -234,7 +248,7 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
                     type={isPopular ? 'primary' : 'default'}
                     size="large"
                     block
-                    onClick={() => handleUpgrade(plan as 'pro' | 'agency')}
+                    onClick={() => handleUpgrade(plan as 'starter' | 'pro' | 'agency')}
                   >
                     Upgrade to {planData.name}
                   </Button>
