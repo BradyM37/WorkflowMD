@@ -1,214 +1,106 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Result, Button, Typography, Card, Space } from 'antd';
-import { BugOutlined, ReloadOutlined, HomeOutlined } from '@ant-design/icons';
+import { Result, Button, Typography } from 'antd';
+import { ReloadOutlined, HomeOutlined } from '@ant-design/icons';
 
 const { Paragraph, Text } = Typography;
 
-interface ErrorBoundaryProps {
+interface Props {
   children: ReactNode;
   fallback?: ReactNode;
-  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
-interface ErrorBoundaryState {
+interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
 }
 
-/**
- * Error Boundary Component - Graceful error handling
- * Catches JavaScript errors anywhere in child component tree
- * Displays fallback UI and logs error details
- * 
- * Usage:
- * <ErrorBoundary>
- *   <YourComponent />
- * </ErrorBoundary>
- */
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
+class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
     super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-      errorInfo: null,
-    };
+    this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
-    // Update state so the next render will show the fallback UI
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error details
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // Log error for debugging
+    console.error('ErrorBoundary caught an error:', error);
+    console.error('Error info:', errorInfo);
     
-    // Update state with error info
-    this.setState({
-      error,
-      errorInfo,
-    });
-
-    // Call optional onError callback
-    if (this.props.onError) {
-      this.props.onError(error, errorInfo);
-    }
-
-    // In production, you'd send this to an error reporting service
-    // like Sentry, LogRocket, etc.
-    if (process.env.NODE_ENV === 'production') {
-      // Example: Sentry.captureException(error, { extra: errorInfo });
-      this.logErrorToService(error, errorInfo);
-    }
+    this.setState({ errorInfo });
   }
 
-  logErrorToService(error: Error, errorInfo: ErrorInfo) {
-    // Placeholder for error logging service integration
-    const errorData = {
-      message: error.message,
-      stack: error.stack,
-      componentStack: errorInfo.componentStack,
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      url: window.location.href,
-    };
-
-    console.log('Error logged:', errorData);
-    
-    // TODO: Send to error tracking service
-    // fetch('/api/log-error', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(errorData),
-    // });
-  }
-
-  handleReset = () => {
-    this.setState({
-      hasError: false,
-      error: null,
-      errorInfo: null,
-    });
+  handleRetry = () => {
+    this.setState({ hasError: false, error: null, errorInfo: null });
+    window.location.reload();
   };
 
   handleGoHome = () => {
-    this.handleReset();
+    this.setState({ hasError: false, error: null, errorInfo: null });
     window.location.href = '/dashboard';
-  };
-
-  handleReload = () => {
-    window.location.reload();
   };
 
   render() {
     if (this.state.hasError) {
-      // Custom fallback UI
       if (this.props.fallback) {
         return this.props.fallback;
       }
 
-      // Default fallback UI - Styled like Linear/Notion
       return (
-        <div style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          padding: '24px',
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          minHeight: '60vh',
+          padding: '24px'
         }}>
-          <Card
-            style={{
-              maxWidth: '600px',
-              width: '100%',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-              borderRadius: '12px',
-            }}
+          <Result
+            status="error"
+            title="Something went wrong"
+            subTitle="We're sorry, but something unexpected happened. Please try again."
+            extra={[
+              <Button 
+                type="primary" 
+                key="retry" 
+                icon={<ReloadOutlined />}
+                onClick={this.handleRetry}
+              >
+                Try Again
+              </Button>,
+              <Button 
+                key="home" 
+                icon={<HomeOutlined />}
+                onClick={this.handleGoHome}
+              >
+                Go to Dashboard
+              </Button>,
+            ]}
           >
-            <Result
-              status="error"
-              icon={<BugOutlined style={{ fontSize: '64px', color: '#ff4d4f' }} />}
-              title="Oops! Something went wrong"
-              subTitle="We're sorry for the inconvenience. The error has been logged and we'll look into it."
-              extra={
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <Space style={{ width: '100%', justifyContent: 'center' }}>
-                    <Button
-                      type="primary"
-                      size="large"
-                      icon={<HomeOutlined />}
-                      onClick={this.handleGoHome}
-                    >
-                      Go to Dashboard
-                    </Button>
-                    <Button
-                      size="large"
-                      icon={<ReloadOutlined />}
-                      onClick={this.handleReload}
-                    >
-                      Reload Page
-                    </Button>
-                  </Space>
-                  
-                  {process.env.NODE_ENV === 'development' && this.state.error && (
-                    <Card
-                      size="small"
-                      style={{ marginTop: '24px', textAlign: 'left' }}
-                      title={
-                        <Text strong style={{ fontSize: '14px' }}>
-                          🔧 Debug Info (Development Only)
-                        </Text>
-                      }
-                    >
-                      <Paragraph>
-                        <Text strong>Error:</Text>
-                        <br />
-                        <Text code copyable style={{ fontSize: '12px' }}>
-                          {this.state.error.message}
-                        </Text>
-                      </Paragraph>
-                      
-                      {this.state.error.stack && (
-                        <Paragraph>
-                          <Text strong>Stack Trace:</Text>
-                          <br />
-                          <pre style={{
-                            fontSize: '11px',
-                            background: '#f5f5f5',
-                            padding: '12px',
-                            borderRadius: '4px',
-                            overflow: 'auto',
-                            maxHeight: '200px',
-                          }}>
-                            {this.state.error.stack}
-                          </pre>
-                        </Paragraph>
-                      )}
-
-                      {this.state.errorInfo && (
-                        <Paragraph>
-                          <Text strong>Component Stack:</Text>
-                          <br />
-                          <pre style={{
-                            fontSize: '11px',
-                            background: '#f5f5f5',
-                            padding: '12px',
-                            borderRadius: '4px',
-                            overflow: 'auto',
-                            maxHeight: '150px',
-                          }}>
-                            {this.state.errorInfo.componentStack}
-                          </pre>
-                        </Paragraph>
-                      )}
-                    </Card>
-                  )}
-                </Space>
-              }
-            />
-          </Card>
+            {process.env.NODE_ENV === 'development' && this.state.error && (
+              <div style={{ textAlign: 'left', marginTop: '24px' }}>
+                <Paragraph>
+                  <Text strong style={{ fontSize: 16, color: '#ff4d4f' }}>
+                    Error Details (Development Only):
+                  </Text>
+                </Paragraph>
+                <Paragraph>
+                  <Text code style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                    {this.state.error.toString()}
+                  </Text>
+                </Paragraph>
+                {this.state.errorInfo && (
+                  <Paragraph>
+                    <Text code style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12 }}>
+                      {this.state.errorInfo.componentStack}
+                    </Text>
+                  </Paragraph>
+                )}
+              </div>
+            )}
+          </Result>
         </div>
       );
     }

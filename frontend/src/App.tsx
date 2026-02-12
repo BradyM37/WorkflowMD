@@ -31,6 +31,7 @@ import ActivityLog from './pages/ActivityLog';
 import SharedReportView from './pages/SharedReportView';
 import Help from './pages/Help';
 import Onboarding from './pages/Onboarding';
+import ErrorPage from './pages/ErrorPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import PrivateRoute from './components/PrivateRoute';
@@ -419,7 +420,7 @@ function AppContent() {
               {/* 404 Fallback */}
               <Route 
                 path="*" 
-                element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} 
+                element={<ErrorPage status="404" />} 
               />
             </Routes>
           </ErrorBoundary>
