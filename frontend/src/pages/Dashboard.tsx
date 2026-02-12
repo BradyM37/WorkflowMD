@@ -31,6 +31,7 @@ import LoadingState from '../components/LoadingState';
 import ScheduleModal from '../components/ScheduleModal';
 import ScanHistoryPanel from '../components/ScanHistoryPanel';
 import { toast, notify } from '../utils/toast';
+import DemoBanner from '../components/DemoBanner';
 // Mock workflows available from '../mocks/mockData' if needed
 import dayjs from 'dayjs';
 
@@ -256,6 +257,9 @@ const Dashboard: React.FC = () => {
 
   return (
     <div>
+      {/* Demo Mode Banner */}
+      <DemoBanner />
+      
       {/* Hero Section */}
       <Card style={{
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
