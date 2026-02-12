@@ -11,6 +11,7 @@ import { asyncHandler } from '../middleware/error-handler';
 import { logger } from '../lib/logger';
 import { pool } from '../lib/database';
 import crypto from 'crypto';
+import { logActivity, ActivityAction, EntityType } from '../lib/activity-log';
 
 const brandingRouter = Router();
 
@@ -197,6 +198,18 @@ brandingRouter.put(
     }
     
     logger.info('Branding settings updated', { locationId, requestId: req.id });
+    
+    // Log activity
+    await logActivity({
+      locationId,
+      userId: req.userId,
+      action: ActivityAction.BRANDING_UPDATED,
+      entityType: EntityType.BRANDING,
+      metadata: { 
+        hasLogo: !!branding?.logoUrl,
+        companyName: branding?.companyName 
+      }
+    });
     
     return ApiResponse.success(res, {
       message: 'Branding settings updated successfully'

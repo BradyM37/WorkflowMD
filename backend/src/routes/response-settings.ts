@@ -9,6 +9,7 @@ import { ApiResponse } from '../lib/response';
 import { asyncHandler } from '../middleware/error-handler';
 import { logger } from '../lib/logger';
 import { pool } from '../lib/database';
+import { logActivity, ActivityAction, EntityType } from '../lib/activity-log';
 
 const responseSettingsRouter = Router();
 
@@ -154,6 +155,20 @@ responseSettingsRouter.put(
     );
     
     logger.info('Alert settings updated', { locationId, userId: req.userId });
+    
+    // Log activity
+    await logActivity({
+      locationId,
+      userId: req.userId,
+      action: ActivityAction.RESPONSE_GOALS_UPDATED,
+      entityType: EntityType.SETTINGS,
+      metadata: { 
+        targetResponseTime,
+        warningThreshold,
+        criticalThreshold,
+        missedThreshold 
+      }
+    });
     
     return ApiResponse.success(res, { 
       message: 'Settings updated successfully',
