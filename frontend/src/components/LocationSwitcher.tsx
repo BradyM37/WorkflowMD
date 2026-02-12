@@ -30,8 +30,8 @@ const LocationSwitcher: React.FC = () => {
 
   const handleConnectAnother = () => {
     // Redirect to GHL OAuth flow for adding another location
-    const clientId = import.meta.env.VITE_GHL_CLIENT_ID;
-    const redirectUri = encodeURIComponent(`${import.meta.env.VITE_API_URL}/auth/ghl/callback`);
+    const clientId = process.env.REACT_APP_GHL_CLIENT_ID;
+    const redirectUri = encodeURIComponent(`${process.env.REACT_APP_API_URL}/auth/ghl/callback`);
     const scope = encodeURIComponent('locations.readonly workflows.readonly');
     window.location.href = `https://marketplace.gohighlevel.com/oauth/chooselocation?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
   };

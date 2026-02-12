@@ -88,12 +88,12 @@ metricsRouter.get(
     // Advanced filter params
     const search = req.query.search as string || '';
     const channels = req.query.channel ? (Array.isArray(req.query.channel) ? req.query.channel : [req.query.channel]) : [];
-    const userId = req.query.userId as string || null;
+    const userId = req.query.userId as string || undefined;
     const status = req.query.status ? (Array.isArray(req.query.status) ? req.query.status : [req.query.status]) : [];
     const minTime = req.query.minTime ? parseInt(req.query.minTime as string) : null;
     const maxTime = req.query.maxTime ? parseInt(req.query.maxTime as string) : null;
-    const startDate = req.query.startDate as string || null;
-    const endDate = req.query.endDate as string || null;
+    const startDate = (req.query.startDate as string) || undefined;
+    const endDate = (req.query.endDate as string) || undefined;
     
     logger.info('Fetching missed conversations with filters', { 
       locationId, limit, offset, search, channels, userId, status, 
@@ -1440,12 +1440,12 @@ metricsRouter.get(
     // Same filter params as /missed endpoint
     const search = req.query.search as string || '';
     const channels = req.query.channel ? (Array.isArray(req.query.channel) ? req.query.channel : [req.query.channel]) : [];
-    const userId = req.query.userId as string || null;
+    const userId = req.query.userId as string || undefined;
     const status = req.query.status ? (Array.isArray(req.query.status) ? req.query.status : [req.query.status]) : [];
     const minTime = req.query.minTime ? parseInt(req.query.minTime as string) : null;
     const maxTime = req.query.maxTime ? parseInt(req.query.maxTime as string) : null;
-    const startDate = req.query.startDate as string || null;
-    const endDate = req.query.endDate as string || null;
+    const startDate = (req.query.startDate as string) || undefined;
+    const endDate = (req.query.endDate as string) || undefined;
     
     logger.info('Exporting conversations', { 
       locationId, format, search, channels, userId, status, requestId: req.id 

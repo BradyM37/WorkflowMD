@@ -24,7 +24,7 @@ export interface GHLLocation {
   connectedAt?: Date;
 }
 
-export type PlanType = 'free' | 'pro' | 'agency';
+export type PlanType = 'free' | 'starter' | 'pro' | 'agency';
 
 interface AuthContextType {
   user: User | null;
