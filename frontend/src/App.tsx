@@ -13,6 +13,7 @@ import {
   QuestionCircleOutlined
 } from '@ant-design/icons';
 import Landing from './pages/Landing';
+import Logo from './components/Logo';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -65,7 +66,7 @@ function AppHeader() {
           style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', flex: 1, minWidth: 0 }}
           onClick={() => navigate(isAuthenticated ? '/dashboard' : '/')}
         >
-          <img src="/logo-full.jpg" alt="FirstResponse" style={{ height: 36, width: 'auto', borderRadius: 4 }} />
+          <Logo size="small" variant={isDarkMode ? 'light' : 'dark'} />
         </div>
         
         {isAuthenticated && (
