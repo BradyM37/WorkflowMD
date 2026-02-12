@@ -34,7 +34,8 @@ import {
   ClockCircleOutlined,
   SettingOutlined,
   BgColorsOutlined,
-  ShareAltOutlined
+  ShareAltOutlined,
+  HistoryOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -186,6 +187,9 @@ const Settings: React.FC = () => {
               </Button>
               <Button block icon={<CreditCardOutlined />} disabled={subscription === 'free'}>
                 Billing Portal {subscription === 'free' && '(Pro)'}
+              </Button>
+              <Button block icon={<HistoryOutlined />} onClick={() => navigate('/activity-log')}>
+                Activity Log
               </Button>
             </Space>
           </Card>

@@ -12,6 +12,7 @@ import { logger } from '../lib/logger';
 import { pool } from '../lib/database';
 import { sendEmail } from '../lib/email-service';
 import { generateResponseReportPDF } from '../lib/response-report-pdf';
+import { logActivity, ActivityAction, EntityType } from '../lib/activity-log';
 
 const reportsRouter = Router();
 
@@ -322,6 +323,15 @@ reportsRouter.post(
       
       logger.info('Daily report sent', { locationId, recipients, requestId: req.id });
       
+      // Log activity
+      await logActivity({
+        locationId,
+        userId: req.userId,
+        action: ActivityAction.REPORT_SENT,
+        entityType: EntityType.REPORT,
+        metadata: { type: 'daily', recipients, responseRate }
+      });
+      
       return ApiResponse.success(res, {
         sent: true,
         recipients,
@@ -380,6 +390,15 @@ reportsRouter.get(
         days, 
         size: pdfBuffer.length,
         requestId: req.id 
+      });
+      
+      // Log activity
+      await logActivity({
+        locationId,
+        userId: req.userId,
+        action: ActivityAction.PDF_GENERATED,
+        entityType: EntityType.EXPORT,
+        metadata: { days, filename, size: pdfBuffer.length }
       });
       
     } catch (error: any) {
