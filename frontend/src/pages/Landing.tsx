@@ -25,6 +25,7 @@ import {
   CrownOutlined,
   ArrowRightOutlined
 } from '@ant-design/icons';
+import Logo from '../components/Logo';
 
 const { Header, Content, Footer } = Layout;
 const { Title, Text, Paragraph } = Typography;
@@ -174,9 +175,7 @@ const Landing: React.FC = () => {
         backgroundColor: 'rgba(255,255,255,0.9)',
         borderBottom: '1px solid rgba(0,0,0,0.05)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <img src="/logo-full.jpg" alt="FirstResponse" style={{ height: 40, width: 'auto', borderRadius: 4 }} />
-        </div>
+        <Logo size="medium" variant="dark" />
         <Space size="large" className="desktop-nav">
           <Button type="text" onClick={() => scrollToSection('features')}>Features</Button>
           <Button type="text" onClick={() => scrollToSection('pricing')}>Pricing</Button>
@@ -495,12 +494,8 @@ const Landing: React.FC = () => {
         color: 'rgba(255,255,255,0.7)'
       }}>
         <Space direction="vertical" size="small">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
-            <img src="/logo-full.jpg" alt="FirstResponse" style={{ height: 32, width: 'auto', borderRadius: 4 }} />
-          </div>
-          <Text style={{ color: 'rgba(255,255,255,0.5)' }}>
-            Be the First, Win the Lead
-          </Text>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+            <Logo size="small" variant="light" showTagline />
           <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
             �
           </Text>
