@@ -496,8 +496,9 @@ const Landing: React.FC = () => {
         <Space direction="vertical" size="small">
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
             <Logo size="small" variant="light" showTagline />
+          </div>
           <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
-            �
+            © 2026 First Response. All rights reserved.
           </Text>
         </Space>
       </Footer>
