@@ -175,10 +175,7 @@ const Landing: React.FC = () => {
         borderBottom: '1px solid rgba(0,0,0,0.05)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 28 }}>🚀</span>
-          <Title level={4} style={{ margin: 0, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            FirstResponse
-          </Title>
+          <img src="/logo-full.jpg" alt="FirstResponse" style={{ height: 40, width: 'auto', borderRadius: 4 }} />
         </div>
         <Space size="large" className="desktop-nav">
           <Button type="text" onClick={() => scrollToSection('features')}>Features</Button>
@@ -214,7 +211,7 @@ const Landing: React.FC = () => {
           }} />
           <div style={{ position: 'relative', maxWidth: 900, margin: '0 auto' }}>
             <Title style={{ color: 'white', fontSize: 'clamp(36px, 6vw, 56px)', marginBottom: 16, fontWeight: 700 }}>
-              Win More Leads by Responding First
+              Be the First, Win the Lead
             </Title>
             <Paragraph style={{ color: 'rgba(255,255,255,0.9)', fontSize: 'clamp(18px, 3vw, 22px)', marginBottom: 40, maxWidth: 700, margin: '0 auto 40px' }}>
               Speed-to-lead analytics for GoHighLevel. Track response times, motivate your team, and close more deals.
@@ -499,14 +496,13 @@ const Landing: React.FC = () => {
       }}>
         <Space direction="vertical" size="small">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
-            <span style={{ fontSize: 24 }}>🚀</span>
-            <Text strong style={{ color: 'white', fontSize: 18 }}>FirstResponse</Text>
+            <img src="/logo-full.jpg" alt="FirstResponse" style={{ height: 32, width: 'auto', borderRadius: 4 }} />
           </div>
           <Text style={{ color: 'rgba(255,255,255,0.5)' }}>
-            Win Every Lead. Respond First.
+            Be the First, Win the Lead
           </Text>
           <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
-            �
+            �
           </Text>
         </Space>
       </Footer>

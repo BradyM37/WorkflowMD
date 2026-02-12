@@ -65,17 +65,7 @@ function AppHeader() {
           style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', flex: 1, minWidth: 0 }}
           onClick={() => navigate(isAuthenticated ? '/dashboard' : '/')}
         >
-          <h1 style={{ 
-            color: 'white', 
-            margin: 0, 
-            fontSize: 'clamp(16px, 4vw, 24px)', 
-            fontWeight: '600',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-          }}>
-            🚀 FirstResponse
-          </h1>
+          <img src="/logo-full.jpg" alt="FirstResponse" style={{ height: 36, width: 'auto', borderRadius: 4 }} />
         </div>
         
         {isAuthenticated && (
@@ -434,10 +424,10 @@ function AppContent() {
         padding: 'clamp(12px, 3vw, 24px)'
       }}>
         <div style={{ fontSize: 'clamp(12px, 2.5vw, 14px)' }}>
-          FirstResponse ©2026 - Win Every Lead. Respond First.
+          FirstResponse ©2026 - Be the First, Win the Lead
           <br />
           <span style={{ fontSize: 'clamp(10px, 2vw, 12px)', color: isDarkMode ? '#595959' : '#8c8c8c' }}>
-            Win Every Lead. Respond First.
+            Be the First, Win the Lead
           </span>
         </div>
       </Footer>

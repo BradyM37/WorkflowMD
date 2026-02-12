@@ -3,14 +3,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button, Card, Typography, Space, Row, Col, Divider, Form, Input, Checkbox, message } from 'antd';
 import { 
   LoginOutlined, 
-  ThunderboltOutlined,
   CheckCircleOutlined,
   SafetyOutlined,
   DashboardOutlined,
   MailOutlined,
   LockOutlined,
   EyeInvisibleOutlined,
-  EyeTwoTone
+  EyeTwoTone,
+  ThunderboltOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -150,25 +150,19 @@ const Login: React.FC = () => {
               <Space direction="vertical" size="large" style={{ width: '100%' }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{
-                    width: '80px',
-                    height: '80px',
                     margin: '0 auto 24px',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    animation: 'float 3s ease-in-out infinite',
-                    boxShadow: '0 8px 24px rgba(102, 126, 234, 0.3)'
+                    justifyContent: 'center'
                   }}>
-                    <ThunderboltOutlined style={{ fontSize: '36px', color: 'white' }} />
+                    <img src="/logo-full.jpg" alt="FirstResponse" style={{ height: 80, width: 'auto', borderRadius: 8 }} />
                   </div>
                   
                   <Title level={3} style={{ marginBottom: '8px', color: colors.titleText }}>
                     Welcome Back
                   </Title>
                   <Text style={{ color: colors.mutedText }}>
-                    Login to your account to continue
+                    Be the First, Win the Lead
                   </Text>
                 </div>
 
