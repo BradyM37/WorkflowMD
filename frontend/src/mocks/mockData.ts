@@ -1,5 +1,5 @@
 /**
- * Centralized Mock Data for WorkflowMD
+ * Centralized Mock Data for FirstResponse
  * 
  * This is the SINGLE SOURCE OF TRUTH for all demo/mock data.
  * DO NOT create inline mock data in components - import from here instead.

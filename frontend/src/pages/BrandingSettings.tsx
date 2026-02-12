@@ -398,7 +398,7 @@ const BrandingSettings: React.FC = () => {
               >
                 <Space>
                   <Switch />
-                  <Text>Remove "Powered by WorkflowMD" branding</Text>
+                  <Text>Remove "Powered by FirstResponse" branding</Text>
                 </Space>
               </Form.Item>
 

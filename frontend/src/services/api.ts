@@ -9,7 +9,7 @@ const getBaseURL = () => {
   }
   // In production (no env var), use the production backend
   if (window.location.hostname !== 'localhost') {
-    return 'https://workflowmd.onrender.com';
+    return 'https://firstresponse.onrender.com';
   }
   // Local development fallback
   return 'http://localhost:3000';
