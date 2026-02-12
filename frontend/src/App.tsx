@@ -26,6 +26,7 @@ import ResponseDashboard from './pages/ResponseDashboard';
 import ResponseSettings from './pages/ResponseSettings';
 import BrandingSettings from './pages/BrandingSettings';
 import SharedReportView from './pages/SharedReportView';
+import Onboarding from './pages/Onboarding';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import PrivateRoute from './components/PrivateRoute';
@@ -273,7 +274,11 @@ function AppContent() {
               {/* Public Routes */}
               <Route 
                 path="/" 
-                element={isAuthenticated ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} 
+                element={
+                  isAuthenticated 
+                    ? (localStorage.getItem('onboarding_completed') ? <Navigate to="/dashboard" /> : <Navigate to="/onboarding" />)
+                    : <Navigate to="/login" />
+                } 
               />
               <Route 
                 path="/login" 
@@ -296,6 +301,7 @@ function AppContent() {
                 element={<EmailVerificationSent />} 
               />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/onboarding" element={<Onboarding />} />
               
               {/* Public Shared Report View (no auth required) */}
               <Route path="/reports/share/:token" element={<SharedReportView />} />
@@ -313,7 +319,7 @@ function AppContent() {
                 path="/dashboard"
                 element={
                   <PrivateRoute>
-                    <Dashboard />
+                    {localStorage.getItem('onboarding_completed') ? <Dashboard /> : <Navigate to="/onboarding" />}
                   </PrivateRoute>
                 }
               />
