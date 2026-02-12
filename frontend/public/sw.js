@@ -7,8 +7,8 @@ const STATIC_ASSETS = [
   '/offline.html',
   '/manifest.json',
   '/favicon.ico',
-  '/logo192.png',
-  '/logo512.png'
+  '/logo192.svg',
+  '/logo512.svg'
 ];
 
 // Install event - cache static assets

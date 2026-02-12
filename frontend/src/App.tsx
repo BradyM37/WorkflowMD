@@ -27,6 +27,7 @@ import WorkflowAnalysis from './pages/WorkflowAnalysis';
 import ResponseDashboard from './pages/ResponseDashboard';
 import ResponseSettings from './pages/ResponseSettings';
 import BrandingSettings from './pages/BrandingSettings';
+import ActivityLog from './pages/ActivityLog';
 import SharedReportView from './pages/SharedReportView';
 import Help from './pages/Help';
 import Onboarding from './pages/Onboarding';
@@ -34,6 +35,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import PrivateRoute from './components/PrivateRoute';
 import UserProfileDropdown from './components/UserProfileDropdown';
+import LocationSwitcher from './components/LocationSwitcher';
 import ErrorBoundary from './components/ErrorBoundary';
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
 import './App.css';
@@ -139,6 +141,9 @@ function AppHeader() {
                   Upgrade to Pro
                 </Button>
               )}
+              
+              {/* Location Switcher */}
+              <LocationSwitcher />
               
               {/* User Profile Dropdown */}
               <UserProfileDropdown />
@@ -399,6 +404,14 @@ function AppContent() {
                 element={
                   <PrivateRoute>
                     <BrandingSettings />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/activity-log"
+                element={
+                  <PrivateRoute>
+                    <ActivityLog />
                   </PrivateRoute>
                 }
               />

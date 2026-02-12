@@ -54,6 +54,8 @@ import brandingRouter from './routes/branding';
 import shareRouter from './routes/share';
 import { benchmarksRouter } from './routes/benchmarks';
 import { notificationsRouter } from './routes/notifications';
+import activityRouter from './routes/activity';
+import locationsRouter from './routes/locations';
 
 // Load environment variables
 dotenv.config();
@@ -360,6 +362,8 @@ app.use('/api/branding', tieredRateLimiter, brandingRouter);
 app.use('/api/reports', shareRouter); // Public share routes (no auth required)
 app.use('/api/benchmarks', tieredRateLimiter, benchmarksRouter);
 app.use('/api/notifications', tieredRateLimiter, notificationsRouter);
+app.use('/api/activity', tieredRateLimiter, activityRouter);
+app.use('/api/locations', tieredRateLimiter, locationsRouter);
 app.use('/api/health', healthRouter); // Detailed health checks for monitoring
 app.use('/api/test-conv', testConvRouter); // TEMP: Remove after verifying API works
 app.use('/api', tieredRateLimiter, monitoringRouter);
