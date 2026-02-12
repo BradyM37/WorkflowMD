@@ -56,6 +56,7 @@ import { benchmarksRouter } from './routes/benchmarks';
 import { notificationsRouter } from './routes/notifications';
 import activityRouter from './routes/activity';
 import locationsRouter from './routes/locations';
+import demoRouter from './routes/demo';
 
 // Load environment variables
 dotenv.config();
@@ -357,6 +358,9 @@ app.use('/api/subscription', tieredRateLimiter, subscriptionRouter);
 app.use('/api/metrics', tieredRateLimiter, metricsRouter);
 app.use('/api/metrics', tieredRateLimiter, advancedMetricsRouter);
 app.use('/api/settings/response', tieredRateLimiter, responseSettingsRouter);
+
+// Demo mode routes (no auth required - returns sample data)
+app.use('/api/demo', demoRouter);
 app.use('/api/reports', tieredRateLimiter, reportsRouter);
 app.use('/api/branding', tieredRateLimiter, brandingRouter);
 app.use('/api/reports', shareRouter); // Public share routes (no auth required)

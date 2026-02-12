@@ -33,7 +33,8 @@ const ConnectGHL: React.FC = () => {
   };
 
   const handleSkipForDemo = () => {
-    // Set demo flag and go to dashboard
+    // Set demo mode flags and go to dashboard
+    localStorage.setItem('demo_mode', 'true');
     localStorage.setItem('location_id', 'demo_location_123');
     localStorage.setItem('ghl_connected', 'demo');
     navigate('/dashboard');

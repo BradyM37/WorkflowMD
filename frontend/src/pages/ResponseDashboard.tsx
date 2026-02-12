@@ -80,6 +80,8 @@ import DateRangePickerComponent, { DateRange } from '../components/DateRangePick
 import ActivityFeed from '../components/ActivityFeed';
 import AnimatedStatCard from '../components/AnimatedStatCard';
 import { useConfetti } from '../hooks/useConfetti';
+import DashboardSkeleton from '../components/DashboardSkeleton';
+import TableSkeleton from '../components/TableSkeleton';
 import './ResponseDashboard.css';
 
 const { Title, Text } = Typography;
@@ -654,29 +656,11 @@ const ResponseDashboard: React.FC = () => {
     </Modal>
   );
 
-  // Loading state
+  // Loading state - show polished skeleton
   if (loadingOverview && !overviewData) {
     return (
       <div className="response-dashboard">
-        <div className="dashboard-header">
-          <Skeleton.Input active style={{ width: 300, height: 40 }} />
-          <Skeleton.Button active style={{ width: 200 }} />
-        </div>
-        <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
-          {[1, 2, 3, 4].map(i => (
-            <Col key={i} xs={24} sm={12} lg={6}>
-              <Card><Skeleton active paragraph={{ rows: 2 }} /></Card>
-            </Col>
-          ))}
-        </Row>
-        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-          <Col xs={24} lg={16}>
-            <Card><Skeleton active paragraph={{ rows: 6 }} /></Card>
-          </Col>
-          <Col xs={24} lg={8}>
-            <Card><Skeleton active paragraph={{ rows: 6 }} /></Card>
-          </Col>
-        </Row>
+        <DashboardSkeleton />
       </div>
     );
   }
@@ -1159,12 +1143,13 @@ const ResponseDashboard: React.FC = () => {
                   title="No Missed Leads!"
                   subTitle="Great job! All your leads have been contacted."
                 />
+              ) : loadingMissed ? (
+                <TableSkeleton rows={5} columns={4} />
               ) : (
                 <Table
                   dataSource={missed}
                   columns={missedColumns}
                   rowKey="id"
-                  loading={loadingMissed}
                   pagination={{ pageSize: 10 }}
                   rowClassName={(record) => {
                     const waitTime = Date.now() - new Date(record.firstInboundAt).getTime();
@@ -1185,7 +1170,9 @@ const ResponseDashboard: React.FC = () => {
                   <span>Team Leaderboard</span>
                 </Space>
               ),
-              children: team.length === 0 ? (
+              children: loadingTeam ? (
+                <TableSkeleton rows={5} columns={6} />
+              ) : team.length === 0 ? (
                 <Empty 
                   description="No team data yet. Team members will appear after they respond to conversations."
                 />
@@ -1194,7 +1181,6 @@ const ResponseDashboard: React.FC = () => {
                   dataSource={team}
                   columns={teamColumns}
                   rowKey="userId"
-                  loading={loadingTeam}
                   pagination={false}
                   onRow={(record: TeamMember) => ({
                     onClick: () => setSelectedUser({ id: record.userId, name: record.userName }),
